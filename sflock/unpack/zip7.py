@@ -20,7 +20,7 @@ class ZipFile(Unpacker):
 
     def handles(self):
         # MSIX shouldn't be unpacked
-        if hasattr(self.f, "filename") and self.f.filename.endswith(self.exts):
+        if hasattr(self.f, "filename") and self.f.filename and self.f.filename.endswith(self.exts):
             return True
         if all([pattern in self.f.contents for pattern in (b"Registry.dat", b"AppxManifest.xml")]):
             return False

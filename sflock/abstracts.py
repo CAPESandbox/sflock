@@ -70,7 +70,7 @@ class Unpacker(object):
         return not return_code
 
     def handles(self):
-        if self.f.filename and self.f.filename.lower().endswith(self.exts):
+        if self.f.filename and self.f.filename and self.f.filename.lower().endswith(self.exts):
             return True
 
         if self.f.package and self.f.package in make_list(self.package or []):
