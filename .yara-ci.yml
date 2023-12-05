@@ -1,0 +1,8 @@
+files:
+  accept:
+  - "sflock/data/yara/*.yar"
+
+false_positives:
+  ignore:
+    - rule: "archive_udf"
+    - rule: "shellcode_get_eip"
