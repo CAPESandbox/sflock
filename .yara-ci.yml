@@ -1,0 +1,7 @@
+files:
+  accept:
+  - "sflock/data/yara/*.yar"
+
+false_positives:
+  ignore:
+    - "sflock/data/yara/*.yar"
