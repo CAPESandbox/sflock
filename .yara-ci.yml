@@ -4,5 +4,4 @@ files:
 
 false_positives:
   ignore:
-    - rule: "archive_udf"
-    - rule: "shellcode_get_eip"
+    - "sflock/data/yara/*.yar"
