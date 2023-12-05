@@ -105,7 +105,7 @@ file_extensions = OrderedDict(
         ("inf", (b".inf",)),
         ("one", (b".one", b".onetoc2")),
         ("zpaq", (b".zpaq",)),
-        ("pgp", (b".gpg", ".pgp")),
+        ("pgp", (b".gpg", b".pgp")),
     ]
 )
 
