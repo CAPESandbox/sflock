@@ -197,7 +197,7 @@ magics = OrderedDict(
 )
 
 def is_executable(f):
-    return f.contents.startswith(b"MZ") or f.contents.startswith(b"\x7fELF")
+    return f.contents.startswith((b"MZ", b"\x7fELF"))
 
 def detect_shellcode(f):
 
