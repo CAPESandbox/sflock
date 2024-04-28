@@ -196,6 +196,8 @@ magics = OrderedDict(
     ]
 )
 
+def is_executable(f):
+    return f.contents.startswith((b"MZ", b"\x7fELF"))
 
 def detect_shellcode(f):
 
@@ -267,7 +269,7 @@ def sct(f):
 
 
 def xxe(f):
-    if f.contents.startswith(b"MZ"):
+    if is_executable(f):
         return None
 
     STRINGS = [
@@ -285,7 +287,7 @@ def xxe(f):
 
 
 def hta(f):
-    if f.contents.startswith(b"MZ"):
+    if is_executable(f):
         return None
 
     STRINGS = [
@@ -322,7 +324,7 @@ def office_one(f):
 
 
 def office_webarchive(f):
-    if f.contents.startswith(b"MZ"):
+    if is_executable(f):
         return None
 
     STRINGS = [
@@ -403,7 +405,7 @@ def office_ole(f):
 
 
 def powershell(f):
-    if f.contents.startswith(b"MZ"):
+    if is_executable(f):
         return None
 
     POWERSHELL_STRS = [
@@ -428,7 +430,7 @@ def powershell(f):
 
 
 def javascript(f):
-    if f.contents.startswith(b"MZ"):
+    if is_executable(f):
         return None
 
     JS_STRS = [
@@ -456,7 +458,7 @@ def javascript(f):
 
 
 def wsf(f):
-    if f.contents.startswith(b"MZ"):
+    if is_executable(f):
         return None
 
     match = re.search(b'<script\\s+language="(J|VB|Perl)Script"', f.contents, re.I)
@@ -465,7 +467,7 @@ def wsf(f):
 
 
 def pub(f):
-    if f.contents.startswith(b"MZ"):
+    if is_executable(f):
         return None
 
     PUB_STRS = [
@@ -482,7 +484,7 @@ def pub(f):
 
 
 def visualbasic(f):
-    if f.contents.startswith(b"MZ"):
+    if is_executable(f):
         return None
 
     VB_STRS = [
@@ -534,7 +536,7 @@ def dmg(f):
 
 
 def vbe_jse(f):
-    if f.contents.startswith(b"MZ"):
+    if is_executable(f):
         return None
 
     if b"#@~^" in f.contents[:100]:
@@ -556,7 +558,7 @@ def udf(f):
 
 
 def inf(f):
-    if f.contents.startswith(b"MZ"):
+    if is_executable(f):
         return None
 
     STRINGS = [
