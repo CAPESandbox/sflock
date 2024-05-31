@@ -1,6 +1,5 @@
 *.a
 *.o
-*.dll
 *.exe
 *.so
 *.pyc

@@ -5,6 +5,7 @@
 
 import hashlib
 import io
+import magic
 import ntpath
 import olefile
 import os.path
@@ -13,7 +14,6 @@ import shutil
 import subprocess
 import tempfile
 
-from sflock.compat import magic
 from sflock.config import iter_passwords
 from sflock.exception import UnpackException
 from sflock.misc import data_file, make_list
