@@ -6,7 +6,7 @@ import re
 from collections import OrderedDict
 
 import pefile
-from sflock.aux.decode_vbe_jse import decode_file as vbe_decode_file
+from sflock.auxiliary.decode_vbe_jse import decode_file as vbe_decode_file
 
 
 try:
