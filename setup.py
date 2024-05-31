@@ -3,6 +3,8 @@
 # This file is part of SFlock - http://www.sflock.org/.
 # See the file 'docs/LICENSE.txt' for copying permission.
 
+import sys
+
 from setuptools import setup, find_packages
 from distutils.util import convert_path
 
@@ -12,6 +14,18 @@ with open(ver_module) as fh:
     exec(fh.read(), ver_module_ns)
 assert "__version__" in ver_module_ns
 version = ver_module_ns["__version__"]
+
+install_requires=[
+    "click",
+    "cryptography>=2.1",
+    "olefile>=0.43",
+    # "peepdf>=0.4.1",
+    "python-magic>=0.4.13",
+    "pefile",
+]
+
+if sys.platform == "win32":
+    install_require.append("python-magic-bin>=0.4.14")
 
 setup(
     name="SFlock2",
@@ -47,15 +61,7 @@ setup(
     license="GPLv3",
     description="Sample staging and detonation utility",
     include_package_data=True,
-    install_requires=[
-        "click",
-        "cryptography>=2.1",
-        "olefile>=0.43",
-        # "peepdf>=0.4.1",
-        "python-magic>=0.4.13",
-        "python-magic-bin>=0.4.14",
-        "pefile",
-    ],
+    install_requires=install_requires,
     extras_require={
         "dev": ["mock", "pytest"],
         "shellcode": ["unicorn>=2.0.0", "yara-python>=4.1.0"],
