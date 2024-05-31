@@ -6,30 +6,10 @@
 from __future__ import absolute_import
 
 import logging
-import os
-import sys
-
-import sflock
-
-from sflock.misc import data_file
-
-log = logging.getLogger(__name__)
-
-# Provide libmagic support in terms of binaries under Windows.
-if sys.platform == "win32":
-    if sys.maxsize != 0x7FFFFFFF:
-        os.environ["PATH"] = "%s;%s" % (data_file("win64"), os.environ["PATH"])
-        magic_file = data_file("win64", "magic.mgc")
-    else:
-        os.environ["PATH"] = "%s;%s" % (data_file("win32"), os.environ["PATH"])
-        magic_file = data_file("win32", "magic.mgc")
-
-# Therefore only import libmagic at this point.
 import magic
 
-if sys.platform == "win32":
-    magic._instances[False] = magic.Magic(mime=False, magic_file=magic_file)
-    magic._instances[True] = magic.Magic(mime=True, magic_file=magic_file)
+
+log = logging.getLogger(__name__)
 
 
 def from_file(f, mime=False):

@@ -53,6 +53,7 @@ setup(
         "olefile>=0.43",
         # "peepdf>=0.4.1",
         "python-magic>=0.4.13",
+        "python-magic-lib>=0.4.14",
         "pefile",
     ],
     extras_require={
