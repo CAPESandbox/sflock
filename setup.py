@@ -25,7 +25,7 @@ install_requires=[
 ]
 
 if sys.platform == "win32":
-    install_require.append("python-magic-bin>=0.4.14")
+    install_requires.append("python-magic-bin>=0.4.14")
 
 setup(
     name="SFlock2",
