@@ -20,12 +20,13 @@ install_requires=[
     "cryptography>=2.1",
     "olefile>=0.43",
     # "peepdf>=0.4.1",
-    "python-magic>=0.4.13",
     "pefile",
 ]
 
 if sys.platform == "win32":
     install_requires.append("python-magic-bin>=0.4.14")
+elif sys.platform.startswith("linux"):
+    install_requires.append("python-magic>=0.4.13")
 
 setup(
     name="SFlock2",
