@@ -1,30 +1,30 @@
 name: build
 
+env:
+  COLUMNS: 132
+
 on: [push, pull_request]
 
 jobs:
-  tester:
-    name: Test them all
-    runs-on: ${{ matrix.operating-system }}
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
     strategy:
-      max-parallel: 4
       matrix:
-        operating-system: [ubuntu-latest]
         python-version: ["3.10", "3.11"]
-
     steps:
-    - uses: actions/checkout@v3
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install dependencies
-      run: |
-        sudo apt-get install zpaq p7zip-full rar unace-nonfree cabextract lzip libjpeg8-dev zlib1g-dev gnupg
-        python -m pip install --upgrade pip
-        pip install pytest>=3.6 mock "pytest-cov<2.6.0" codecov
-        pip install -e ".[shellcode]"
-    - name: Test with pytest
-      run: |
-        pip install pytest
-        pytest
+      - name: Check out repository code
+        uses: actions/checkout@v4
+
+      - uses: ./.github/actions/python-setup/
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          poetry run pip install "pytest-cov<2.6.0" codecov
+          poetry run pip install -e ".[shellcode,dev,linux]"
+
+      - name: Run unit tests
+        run: poetry run python -m pytest --import-mode=append
+
