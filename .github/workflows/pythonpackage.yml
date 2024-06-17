@@ -23,7 +23,7 @@ jobs:
       - name: Install dependencies
         run: |
           poetry run pip install "pytest-cov<2.6.0" codecov
-          poetry run pip install -e ".[shellcode,dev]"
+          poetry run pip install -e ".[shellcode,dev,linux]"
 
       - name: Run unit tests
         run: poetry run python -m pytest --import-mode=append
