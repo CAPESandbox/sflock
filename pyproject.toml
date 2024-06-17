@@ -1,0 +1,32 @@
+
+[tool.poetry]
+name = "SFlock2"
+version = "0.3.63"
+description = "Sample staging and detonation utility"
+readme = "README.md"
+license = "GPLv3"
+include = ["sflock/**"]
+keywords = [ "sflock", "unarchive"]
+authors = ["Hatching B.V. <jbr@hatching.io>"]
+
+[tool.poetry.dependencies]
+python = ">=3.8,<4.0"
+click = "*"
+cryptography = ">=2.1"
+olefile = ">=0.43"
+pefile = "*"
+python-magic-bin = {version = ">=0.4.14", markers = "sys_platform == 'win32'" }
+python-magic = {version = ">=0.4.13", markers = "sys_platform == 'linux'" }
+
+unicorn = {version = ">=2.0.0", extras = ["shellcode"] }
+yara-python = {version = ">=4.1.0", extras = ["shellcode"] }
+
+mock = {version = ">=5.1.0", extras = ["dev"] }
+pytest = {version = ">=8.2.2", extras = ["dev"] }
+
+[tool.poetry.scripts]
+sflock = "sflock.main:main"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
