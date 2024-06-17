@@ -17,8 +17,8 @@ click = "*"
 cryptography = ">=2.1"
 olefile = ">=0.43"
 pefile = "*"
-python-magic-bin = {version = ">=0.4.14", markers = "sys_platform == 'win32'", optional = true }
-python-magic = {version = ">=0.4.13", markers = "sys_platform == 'linux'", optional = true }
+python-magic-bin = {version = ">=0.4.14", markers = "sys_platform == 'win32'" }
+python-magic = {version = ">=0.4.13", markers = "sys_platform == 'linux'" }
 
 unicorn = {version = ">=2.0.0", extras = ["shellcode"], optional = true }
 yara-python = {version = ">=4.1.0", extras = ["shellcode"], optional = true }

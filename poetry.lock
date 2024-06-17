@@ -495,7 +495,7 @@ dev = ["argcomplete", "attrs (>=19.2)", "hypothesis (>=3.56)", "mock", "pygments
 name = "python-magic"
 version = "0.4.27"
 description = "File type identification using libmagic"
-optional = true
+optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 files = [
     {file = "python-magic-0.4.27.tar.gz", hash = "sha256:c1ba14b08e4a5f5c31a302b7721239695b2f0f058d125bd5ce1ee36b9d9d3c3b"},
@@ -506,7 +506,7 @@ files = [
 name = "python-magic-bin"
 version = "0.4.14"
 description = "File type identification using libmagic binary package"
-optional = true
+optional = false
 python-versions = "*"
 files = [
     {file = "python_magic_bin-0.4.14-py2.py3-none-macosx_10_6_intel.whl", hash = "sha256:7b1743b3dbf16601d6eedf4e7c2c9a637901b0faaf24ad4df4d4527e7d8f66a4"},
@@ -722,4 +722,4 @@ shellcode = ["unicorn", "yara-python"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8,<4.0"
-content-hash = "6637d3df7a8225ba561e978f542cb2662b0380bf8cb77fc9f230710d8852c72d"
+content-hash = "54322bccbd07e7e90a75b8a48070151ee04f6b11732b57d9921ccd5918090e1b"
