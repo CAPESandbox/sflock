@@ -24,6 +24,8 @@ yara-python = {version = ">=4.1.0", extras = ["shellcode"], optional = true }
 mock = {version = ">=5.1.0", extras = ["dev"], optional = true }
 pytest = {version = ">=8.2.2", extras = ["dev"], optional = true }
 
+[tool.distutils.bdist_wheel]
+universal = true
 
 [tool.poetry.extras]
 shellcode = ["unicorn", "yara-python"]
