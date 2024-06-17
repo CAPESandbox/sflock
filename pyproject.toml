@@ -9,6 +9,8 @@ include = ["sflock/**"]
 keywords = [ "sflock", "unarchive"]
 authors = ["Hatching B.V. <jbr@hatching.io>"]
 
+packages = [{ include = "sflock" }]
+
 [tool.poetry.dependencies]
 python = ">=3.8,<4.0"
 click = "*"
