@@ -28,13 +28,13 @@ $ sudo apt-get install p7zip-full rar unace-nonfree cabextract lzip libjpeg8-dev
 Installation of sflock itself may be done as follows.
 
 ```bash
-$ sudo pip install -U sflock2
+$ sudo pip install -U sflock2"sflock2[linux]"
 ```
 
 Or in a virtualenv environment.
 
 ```bash
-(venv)$ pip install -U sflock2
+(venv)$ pip install -U "sflock2[linux]"
 ```
 
 Supported archives
