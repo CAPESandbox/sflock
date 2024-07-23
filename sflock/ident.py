@@ -86,7 +86,7 @@ file_extensions = OrderedDict(
         # ("eml", (b".eml", b".ics")),
         ("js", (b".js", b".jse")),
         ("ie", (b".url")),
-        ("html", (b"html")), #b".htm")),
+        ("html", (b"html")),  # b".htm")),
         ("xps", (b".xps",)),
         ("hta", (b".hta",)),
         ("mht", (b".mht",)),
@@ -196,8 +196,31 @@ magics = OrderedDict(
     ]
 )
 
+
 def is_executable(f):
     return f.contents.startswith((b"MZ", b"\x7fELF"))
+
+
+def have_enough_memory_for_unicorn():
+    """
+    Avoid unicorn calling exit(1) due to memory leak.
+    - https://github.com/unicorn-engine/unicorn/issues/1766
+    - https://github.com/unicorn-engine/unicorn/pull/1629
+    """
+    try:
+        from mmap import mmap, MAP_ANON, MAP_PRIVATE, PROT_EXEC, PROT_READ, PROT_WRITE
+
+        mm = mmap(
+            -1,
+            1024 * 1024 * 1024,
+            MAP_PRIVATE | MAP_ANON,
+            PROT_WRITE | PROT_READ | PROT_EXEC,
+        )
+        mm.close()
+        return True
+    except OSError:
+        return False
+
 
 def detect_shellcode(f):
 
@@ -213,6 +236,11 @@ def detect_shellcode(f):
     shellcode_count32 = 0
     shellcode_count64 = 0
     shellcode_last_address = 0
+
+    if not have_enough_memory_for_unicorn():
+        print("not enough memory for unicorn")
+        return False
+
     emulate(f.contents, UC_MODE_64)
     if shellcode_last_address - shellcode_code_base < shellcode_threshold:
         shellcode_count64 = 0
