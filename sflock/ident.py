@@ -142,6 +142,17 @@ trusted_archive_magics = OrderedDict(
     ]
 )
 
+exec_magics = OrderedDict(
+    [
+        ("PE32 executable (DLL)", "dll"),
+        ("PE32+ executable (DLL)", "dll"),
+        ("MS-DOS executable PE32 executable (DLL)", "dll"),
+        ("PE32 executable", "exe"),
+        ("PE32+ executable", "exe"),
+        ("MS-DOS executable, MZ for MS-DOS", "exe"),
+    ]
+)
+
 magics = OrderedDict(
     [
         # ToDo msdos
@@ -297,9 +308,6 @@ def sct(f):
 
 
 def xxe(f):
-    if is_executable(f):
-        return None
-
     STRINGS = [
         b"XXEncode",
         b"begin",
@@ -315,9 +323,6 @@ def xxe(f):
 
 
 def hta(f):
-    if is_executable(f):
-        return None
-
     STRINGS = [
         b"<head",
         b"<title",
@@ -352,9 +357,6 @@ def office_one(f):
 
 
 def office_webarchive(f):
-    if is_executable(f):
-        return None
-
     STRINGS = [
         b"<o:Pages>",
         b"<o:DocumentProperties>",
@@ -433,9 +435,6 @@ def office_ole(f):
 
 
 def powershell(f):
-    if is_executable(f):
-        return None
-
     POWERSHELL_STRS = [
         b"$PSHOME",
         b"Get-WmiObject",
@@ -458,9 +457,6 @@ def powershell(f):
 
 
 def javascript(f):
-    if is_executable(f):
-        return None
-
     JS_STRS = [
         b"var ",
         b"function ",
@@ -486,18 +482,12 @@ def javascript(f):
 
 
 def wsf(f):
-    if is_executable(f):
-        return None
-
     match = re.search(b'<script\\s+language="(J|VB|Perl)Script"', f.contents, re.I)
     if match:
         return "wsf"
 
 
 def pub(f):
-    if is_executable(f):
-        return None
-
     PUB_STRS = [
         b"Microsoft Publisher",
         b"MSPublisher",
@@ -512,9 +502,6 @@ def pub(f):
 
 
 def visualbasic(f):
-    if is_executable(f):
-        return None
-
     VB_STRS = [
         b"Dim ",
         b"\x00D\x00i\x00m\x00 ",
@@ -564,9 +551,6 @@ def dmg(f):
 
 
 def vbe_jse(f):
-    if is_executable(f):
-        return None
-
     if b"#@~^" in f.contents[:100]:
         data = vbe_decode_file("", f.contents)
         if data:
@@ -586,9 +570,6 @@ def udf(f):
 
 
 def inf(f):
-    if is_executable(f):
-        return None
-
     STRINGS = [
         # b"[version]",
         b"Signature=",
@@ -608,6 +589,19 @@ def inf(f):
 def identify(f, check_shellcode: bool = False):
     if not f.stream.read(0x1000):
         return
+
+    if is_executable(f):
+        # to reduce number of checks
+        for magic_types in exec_magics:
+            if f.magic.startswith(magic_types):
+                # MS-DOS executable PE32 executable (DLL) (GUI) Intel 80386, for MS Windows
+                #   MZ for MS-DOS -> MS-DOS executable
+                #       MZ for MS-DOS -> but is DLL
+                package = exec_magics[magic_types]
+                if package in ("exe", "dll"):
+                    pe = pefile.PE(data=f.contents, fast_load=True)
+                    return "dll" if pe.is_dll() else "exe"
+        return None
 
     if f.filename:
         for package, extensions in file_extensions.items():
@@ -634,6 +628,7 @@ def identify(f, check_shellcode: bool = False):
         package = identifier(f)
         if package:
             return package
+
     for magic_types in magics:
         if f.magic.startswith(magic_types):
             # MS-DOS executable PE32 executable (DLL) (GUI) Intel 80386, for MS Windows
