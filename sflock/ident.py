@@ -631,6 +631,7 @@ def identify(f, check_shellcode: bool = False):
                 if package in ("exe", "dll"):
                     pe = pefile.PE(data=f.contents, fast_load=True)
                     return "dll" if pe.is_dll() else "exe"
+        return None
 
     if f.filename:
         for package, extensions in file_extensions.items():
