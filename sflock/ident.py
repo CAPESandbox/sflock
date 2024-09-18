@@ -142,6 +142,17 @@ trusted_archive_magics = OrderedDict(
     ]
 )
 
+exec_magics = OrderedDict(
+    [
+        ("PE32 executable (DLL)", "dll"),
+        ("PE32+ executable (DLL)", "dll"),
+        ("MS-DOS executable PE32 executable (DLL)", "dll"),
+        ("PE32 executable", "exe"),
+        ("PE32+ executable", "exe"),
+        ("MS-DOS executable, MZ for MS-DOS", "exe"),
+    ]
+)
+
 magics = OrderedDict(
     [
         # ToDo msdos
@@ -609,6 +620,18 @@ def identify(f, check_shellcode: bool = False):
     if not f.stream.read(0x1000):
         return
 
+    if is_executable(f):
+        # to reduce number of checks
+        for magic_types in exec_magics:
+            if f.magic.startswith(magic_types):
+                # MS-DOS executable PE32 executable (DLL) (GUI) Intel 80386, for MS Windows
+                #   MZ for MS-DOS -> MS-DOS executable
+                #       MZ for MS-DOS -> but is DLL
+                package = exec_magics[magic_types]
+                if package in ("exe", "dll"):
+                    pe = pefile.PE(data=f.contents, fast_load=True)
+                    return "dll" if pe.is_dll() else "exe"
+
     if f.filename:
         for package, extensions in file_extensions.items():
             if f.filename.endswith(extensions) and not f.contents.startswith(b"MZ"):
@@ -634,6 +657,7 @@ def identify(f, check_shellcode: bool = False):
         package = identifier(f)
         if package:
             return package
+
     for magic_types in magics:
         if f.magic.startswith(magic_types):
             # MS-DOS executable PE32 executable (DLL) (GUI) Intel 80386, for MS Windows
