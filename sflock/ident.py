@@ -308,9 +308,6 @@ def sct(f):
 
 
 def xxe(f):
-    if is_executable(f):
-        return None
-
     STRINGS = [
         b"XXEncode",
         b"begin",
@@ -326,9 +323,6 @@ def xxe(f):
 
 
 def hta(f):
-    if is_executable(f):
-        return None
-
     STRINGS = [
         b"<head",
         b"<title",
@@ -363,9 +357,6 @@ def office_one(f):
 
 
 def office_webarchive(f):
-    if is_executable(f):
-        return None
-
     STRINGS = [
         b"<o:Pages>",
         b"<o:DocumentProperties>",
@@ -444,9 +435,6 @@ def office_ole(f):
 
 
 def powershell(f):
-    if is_executable(f):
-        return None
-
     POWERSHELL_STRS = [
         b"$PSHOME",
         b"Get-WmiObject",
@@ -469,9 +457,6 @@ def powershell(f):
 
 
 def javascript(f):
-    if is_executable(f):
-        return None
-
     JS_STRS = [
         b"var ",
         b"function ",
@@ -497,18 +482,12 @@ def javascript(f):
 
 
 def wsf(f):
-    if is_executable(f):
-        return None
-
     match = re.search(b'<script\\s+language="(J|VB|Perl)Script"', f.contents, re.I)
     if match:
         return "wsf"
 
 
 def pub(f):
-    if is_executable(f):
-        return None
-
     PUB_STRS = [
         b"Microsoft Publisher",
         b"MSPublisher",
@@ -523,9 +502,6 @@ def pub(f):
 
 
 def visualbasic(f):
-    if is_executable(f):
-        return None
-
     VB_STRS = [
         b"Dim ",
         b"\x00D\x00i\x00m\x00 ",
@@ -575,9 +551,6 @@ def dmg(f):
 
 
 def vbe_jse(f):
-    if is_executable(f):
-        return None
-
     if b"#@~^" in f.contents[:100]:
         data = vbe_decode_file("", f.contents)
         if data:
@@ -597,9 +570,6 @@ def udf(f):
 
 
 def inf(f):
-    if is_executable(f):
-        return None
-
     STRINGS = [
         # b"[version]",
         b"Signature=",
