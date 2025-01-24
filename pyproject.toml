@@ -1,7 +1,7 @@
 
 [tool.poetry]
 name = "SFlock2"
-version = "0.3.66"
+version = "0.3.67"
 description = "Sample staging and detonation utility"
 readme = "README.md"
 license = "GPLv3"
