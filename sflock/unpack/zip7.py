@@ -7,11 +7,13 @@ import os
 import tempfile
 
 from sflock.abstracts import Unpacker
+from sflock.misc import data_file
 
+zip7_binary = data_file(b"7zz.elf")
 
 class ZipFile(Unpacker):
     name = "zipfile"
-    exe = "/usr/bin/7z"
+    exe = zip7_binary
     exts = b".zip"
     magic = "Zip archive data"
 
@@ -56,7 +58,7 @@ class ZipFile(Unpacker):
 
 class Zip7File(Unpacker):
     name = "7zfile"
-    exe = "/usr/bin/7z"
+    exe = zip7_binary
     exts = b".7z", b".iso", b".udf", b".xz"
     # TODO Should we use "isoparser" (check PyPI) instead of 7z?
     magic = "7-zip archive", "ISO 9660", "UDF filesystem data", "XZ compressed data"
@@ -84,7 +86,7 @@ class Zip7File(Unpacker):
 
 class GzipFile(Unpacker):
     name = "gzipfile"
-    exe = "/usr/bin/7z"
+    exe = zip7_binary
     exts = b".gzip", b".gz"
     magic = "gzip compressed data, was"
 
@@ -110,7 +112,7 @@ class GzipFile(Unpacker):
 
 class LzhFile(Unpacker):
     name = "lzhfile"
-    exe = "/usr/bin/7z"
+    exe = zip7_binary
     exts = b".lzh", b".lha"
     magic = "LHa ("
 
@@ -136,7 +138,7 @@ class LzhFile(Unpacker):
 
 class VHDFile(Unpacker):
     name = "vhdfile"
-    exe = "/usr/bin/7z"
+    exe = zip7_binary
     exts = b".vhd", b".vhdx"
     magic = " Microsoft Disk Image"
 
@@ -163,7 +165,7 @@ class VHDFile(Unpacker):
 
 class WimFile(Unpacker):
     name = "wimfile"
-    exe = "/usr/bin/7z"
+    exe = zip7_binary
     exts = b".wim"
     magic = "Windows imaging (WIM) image"
 
@@ -189,7 +191,7 @@ class WimFile(Unpacker):
 
 class XZFile(Unpacker):
     name = "xzfile"
-    exe = "/usr/bin/7z"
+    exe = zip7_binary
     exts = b".xz"
     magic = "XZ compressed data"
 
@@ -216,7 +218,7 @@ class XZFile(Unpacker):
 
 class NSIS(Unpacker):
     name = "nsis"
-    exe = "/usr/bin/7z"
+    exe = zip7_binary
     exts = b".exe"
     magic = "Nullsoft Installer self-extracting archive"
 
