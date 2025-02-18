@@ -482,7 +482,7 @@ def javascript(f):
 
 
 def wsf(f):
-    match = re.search(b'<script\\s+language="(J|VB|Perl)Script"', f.contents, re.I)
+    match = re.search(rb'<script\s+language="(J|VB|Perl)Script"', f.contents, re.I)
     if match:
         return "wsf"
 
@@ -506,7 +506,7 @@ def visualbasic(f):
         b"Dim ",
         b"\x00D\x00i\x00m\x00 ",
         b"dim ",
-        b"\s\x00d\x00i\x00m\x00 ",
+        b" \x00d\x00i\x00m\x00 ",
         b"Set ",
         b"Attribute ",
         b"Public ",
@@ -530,7 +530,7 @@ def visualbasic(f):
 
 
 def java(f):
-    if not f.get_child(b"META-INF/MANIFEST.MF") and not b"META-INF/MANIFEST.MF" in f.contents:
+    if not f.get_child(b"META-INF/MANIFEST.MF") and b"META-INF/MANIFEST.MF" not in f.contents:
         return
     if f.get_child(b"AndroidManifest.xml"):
         return

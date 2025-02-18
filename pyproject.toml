@@ -1,20 +1,20 @@
-
-[tool.poetry]
+[project]
 name = "SFlock2"
-version = "0.3.69"
+version = "0.3.70"
 description = "Sample staging and detonation utility"
 readme = "README.md"
 license = "GPLv3"
 include = ["sflock/**"]
 keywords = [ "sflock", "unarchive"]
-authors = ["Hatching B.V. <jbr@hatching.io>"]
+authors = [{name="Hatching B.V.", email="jbr@hatching.io"}]
 
+[tool.poetry]
 packages = [{ include = "sflock" }]
 
-[tool.poetry.dependencies]
-python = ">=3.8,<4.0"
+[tool.dependencies]
+python = ">=3.10,<4.0"
 click = "*"
-cryptography = ">=2.1"
+cryptography = ">=44.0.0"
 olefile = ">=0.43"
 pefile = "*"
 python-magic-bin = {version = ">=0.4.14", markers = "sys_platform == 'win32'" }
@@ -29,13 +29,13 @@ pytest = {version = ">=8.2.2", optional = true }
 [tool.distutils.bdist_wheel]
 universal = true
 
-[tool.poetry.extras]
+[tool.optional-dependencies]
 shellcode = ["unicorn", "yara-python"]
 dev = ["mock", "pytest"]
 win32 = ["python-magic-bin"]
 linux = ["python-magic"]
 
-[tool.poetry.scripts]
+[tool.scripts]
 sflock = "sflock.main:main"
 
 [build-system]
