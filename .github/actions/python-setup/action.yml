@@ -27,5 +27,5 @@ runs:
     - name: Install requirements
       shell: bash
       run: |
-        poetry install --no-interaction --no-root --only dev
+        poetry install --no-interaction --no-root --only dev,linux
 
