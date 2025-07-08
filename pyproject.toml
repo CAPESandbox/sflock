@@ -25,10 +25,10 @@ unicorn = { version = ">=2.0.0", python = ">=3.8" }
 yara-python = { version = ">=4.1.0", python = ">=3.8" }
 
 [tool.poetry.group.windows.dependencies]
-python-magic-bin = {version = ">=0.4.14",optional = true,  markers = "sys_platform == 'win32'", python = ">=3.8"  }
+python-magic-bin = {version = ">=0.4.14" markers = "sys_platform == 'win32'", python = ">=3.8"  }
 
 [tool.poetry.group.linux.dependencies]
-python-magic = {version = ">=0.4.13", optional = true, markers = "sys_platform == 'linux'", python = ">=3.8" }
+python-magic = {version = ">=0.4.13", markers = "sys_platform == 'linux'", python = ">=3.8" }
 
 
 [tool.poetry.scripts]
