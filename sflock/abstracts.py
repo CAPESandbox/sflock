@@ -27,6 +27,8 @@ class Unpacker(object):
     exe = None
     exts = ()
     package = None
+    # ToDo this is name overlap, but if we change it, it breaks everything
+    magic = None
 
     # Initiated at runtime - contains each Unpacker subclass.
     plugins = {}
@@ -34,7 +36,7 @@ class Unpacker(object):
     def __init__(self, f):
         self.f = f
         self.init()
-        self.magic = None
+
 
     def init(self):
         pass

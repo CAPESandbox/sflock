@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "SFlock2"
-version = "0.3.72"
+version = "0.3.73"
 description = "Sample staging and detonation utility"
 authors = ["Hatching B.V. <jbr@hatching.io>"]
 license = "GPL-3.0-only" # It's best practice to use SPDX identifiers
@@ -29,7 +29,6 @@ python-magic-bin = {version = ">=0.4.14", markers = "sys_platform == 'win32'", p
 
 [tool.poetry.group.linux.dependencies]
 python-magic = {version = ">=0.4.13", markers = "sys_platform == 'linux'", python = ">=3.8" }
-
 
 [tool.poetry.scripts]
 sflock = "sflock.main:main"
