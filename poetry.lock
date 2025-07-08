@@ -309,7 +309,7 @@ dev = ["argcomplete", "attrs (>=19.2)", "hypothesis (>=3.56)", "mock", "pygments
 name = "python-magic"
 version = "0.4.15"
 description = "File type identification using libmagic"
-optional = true
+optional = false
 python-versions = "*"
 groups = ["linux"]
 markers = "sys_platform == \"linux\""
@@ -322,7 +322,7 @@ files = [
 name = "python-magic-bin"
 version = "0.4.14"
 description = "File type identification using libmagic binary package"
-optional = true
+optional = false
 python-versions = "*"
 groups = ["windows"]
 markers = "sys_platform == \"win32\""
@@ -489,4 +489,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10, <4.0"
-content-hash = "a439ba9eb01da2f3bc1541eeb5b86b10cc08d86bdb1647d40826fb337856f3e5"
+content-hash = "16f437a14feca38b25fd395251441fed152310795176e18e6378090c6bb83446"
