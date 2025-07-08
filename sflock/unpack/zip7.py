@@ -10,6 +10,8 @@ from sflock.abstracts import Unpacker
 from sflock.misc import data_file
 
 zip7_binary = data_file(b"7zz.elf")
+# zip7_binary = "/usr/bin/7zip"
+
 
 class ZipFile(Unpacker):
     name = "zipfile"
