@@ -19,7 +19,7 @@ class OfficeFile(Unpacker):
 
         try:
             return plugins["office"](self.f, password).decode()
-        except:
+        except Exception:
             return
 
     def unpack(self, password=None, duplicates=None):

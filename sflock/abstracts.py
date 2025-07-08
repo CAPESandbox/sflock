@@ -27,7 +27,6 @@ class Unpacker(object):
     exe = None
     exts = ()
     package = None
-    magic = None
 
     # Initiated at runtime - contains each Unpacker subclass.
     plugins = {}
@@ -35,6 +34,7 @@ class Unpacker(object):
     def __init__(self, f):
         self.f = f
         self.init()
+        self.magic = None
 
     def init(self):
         pass
@@ -76,8 +76,8 @@ class Unpacker(object):
         if self.f.package and self.f.package in make_list(self.package or []):
             return True
 
-        for magic in make_list(self.magic or []):
-            if magic in self.f.magic:
+        for file_magic in make_list(self.magic or []):
+            if file_magic in self.f.magic:
                 return True
         return False
 

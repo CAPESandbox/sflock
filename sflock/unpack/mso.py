@@ -5,6 +5,7 @@
 import os.path
 import struct
 import zlib
+from contextlib import suppress
 
 from sflock.abstracts import Unpacker, File
 from sflock.exception import UnpackException
@@ -23,11 +24,9 @@ class MsoFile(Unpacker):
 
     def locate_ole(self, contents):
         for idx in range(1024):
-            try:
+            with suppress(Exception):
                 obj = zlib.decompress(contents[idx:])
                 break
-            except:
-                pass
         else:
             raise UnpackException("GZIP stream not found")
 
@@ -50,8 +49,8 @@ class MsoFile(Unpacker):
 
         stream = self.get_stream(ole, "\x01Ole10Native")
         off, filename = parse_string(6)
-        off, filepath = parse_string(off)
-        off, tempname = parse_string(off + 8)
+        off, _ = parse_string(off)
+        off, _ = parse_string(off + 8)
         embed = struct.unpack("I", stream[off : off + 4])[0]
         self.entries.append(File(relapath=filename, contents=stream[off + 4 : off + 4 + embed], selected=False))
 

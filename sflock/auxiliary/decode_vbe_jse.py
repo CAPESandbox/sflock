@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 
+import re
+import sys
+from pathlib import Path
+from typing import List
+
 __description__ = "Decode an encoded VBScript, often seen as a .vbe file"
 __author__ = "John Hammond"
 __date__ = "02/10/2021"
@@ -12,12 +17,6 @@ All I have done is merely cleaned the code a bit, made it Python3 friendly,
 and handled support for multiple #@~...#~@ markings.
 https://github.com/JohnHammond/vbe-decoder/blob/master/vbe-decoder.py
 """
-
-
-import re
-import sys
-from pathlib import Path
-from typing import List
 
 
 def decode_data(data: str) -> str:

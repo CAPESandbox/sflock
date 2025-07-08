@@ -5,7 +5,6 @@
 
 import os.path
 
-from sflock.abstracts import File
 from sflock.main import unpack
 from sflock.ident import identify
 

@@ -1,6 +1,6 @@
 [project]
 name = "SFlock2"
-version = "0.3.70"
+version = "0.3.72"
 description = "Sample staging and detonation utility"
 readme = "README.md"
 license = "GPLv3"
@@ -11,8 +11,8 @@ authors = [{name="Hatching B.V.", email="jbr@hatching.io"}]
 [tool.poetry]
 packages = [{ include = "sflock" }]
 
-[tool.dependencies]
-python = ">=3.10,<4.0"
+[tool.project.dependencies]
+python =  ">=3.10,<4.0"
 click = "*"
 cryptography = ">=44.0.0"
 olefile = ">=0.43"
@@ -22,14 +22,13 @@ pefile = "*"
 optional = true
 
 [tool.poetry.group.windows.dependencies]
-python = ">=3.10,<4.0"
-python-magic-bin = {version = ">=0.4.14", markers = "sys_platform == 'win32'" }
+python-magic-bin = {version = ">=0.4.14", markers = "sys_platform == 'win32'", python = ">=3.8"  }
 
 [tool.poetry.group.linux]
 optional = true
 
 [tool.poetry.group.linux.dependencies]
-python-magic = {version = ">=0.4.13", markers = "sys_platform == 'linux'" }
+python-magic = {version = ">=0.4.13", markers = "sys_platform == 'linux'", python = ">=3.8" }
 
 [tool.poetry.group.dev]
 optional = true
@@ -40,8 +39,8 @@ mock = {version=">=5.1.0", python = ">=3.8"}
 [tool.poetry.group.shellcode]
 optional = true
 [tool.poetry.group.shellcode.dependencies]
-unicorn = ">=2.0.0"
-yara-python = ">=4.1.0"
+unicorn = {version=">=2.0.0", python = ">=3.8"}
+yara-python = {version=">=4.1.0", python = ">=3.8"}
 
 [tool.distutils.bdist_wheel]
 universal = true

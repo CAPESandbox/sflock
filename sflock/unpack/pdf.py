@@ -3,12 +3,10 @@
 # This file is part of SFlock - http://www.sflock.org/.
 # See the file 'docs/LICENSE.txt' for copying permission.
 
-import os
-import sys
 
 # import peepdf
 
-from sflock.abstracts import Unpacker, File
+from sflock.abstracts import Unpacker
 
 
 class PdfFile(Unpacker):

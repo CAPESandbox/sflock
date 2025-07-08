@@ -121,7 +121,7 @@ description = "File type identification using libmagic"
 optional = false
 python-versions = "*"
 groups = ["linux"]
-markers = "sys_platform == \"linux\""
+markers = "sys_platform == \"linux\" and python_version >= \"3.8\""
 files = [
     {file = "python-magic-0.4.15.tar.gz", hash = "sha256:f3765c0f582d2dfc72c15f3b5a82aecfae9498bd29ca840d72f37d7bd38bfcd5"},
     {file = "python_magic-0.4.15-py2.py3-none-any.whl", hash = "sha256:f2674dcfad52ae6c49d4803fa027809540b130db1dec928cfbb9240316831375"},
@@ -134,7 +134,7 @@ description = "File type identification using libmagic binary package"
 optional = false
 python-versions = "*"
 groups = ["windows"]
-markers = "sys_platform == \"win32\""
+markers = "sys_platform == \"win32\" and python_version >= \"3.8\""
 files = [
     {file = "python_magic_bin-0.4.14-py2.py3-none-macosx_10_6_intel.whl", hash = "sha256:7b1743b3dbf16601d6eedf4e7c2c9a637901b0faaf24ad4df4d4527e7d8f66a4"},
     {file = "python_magic_bin-0.4.14-py2.py3-none-win32.whl", hash = "sha256:34a788c03adde7608028203e2dbb208f1f62225ad91518787ae26d603ae68892"},
@@ -191,6 +191,7 @@ description = "Unicorn CPU emulator engine"
 optional = false
 python-versions = "*"
 groups = ["shellcode"]
+markers = "python_version >= \"3.8\""
 files = [
     {file = "unicorn-2.1.1-py2.py3-none-macosx_11_0_arm64.whl", hash = "sha256:8839c02de1914acb9decb291f89eefb2944148460cf5f09a9a1cde920e32e509"},
     {file = "unicorn-2.1.1-py2.py3-none-macosx_12_7_x86_64.whl", hash = "sha256:a52470664a6fe76f735943de5c90865ef049e23522dd1751306fefe2384e5dba"},
@@ -212,6 +213,7 @@ description = "Python interface for YARA"
 optional = false
 python-versions = "*"
 groups = ["shellcode"]
+markers = "python_version >= \"3.8\""
 files = [
     {file = "yara_python-4.5.1-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:7c92219bf91caea277bc2736df70dda3709834c297a4a5906f1d9a46cd03579a"},
     {file = "yara_python-4.5.1-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:6e8e9eb5a49a70a013bf45e0ec97210b7cb124813271fddc666c3cfb1308a2d5"},
@@ -298,4 +300,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = "*"
-content-hash = "ecd61a84632b36084f562a0e7604deb7e59cfd9c74553c5785b7ea56808a4055"
+content-hash = "3fecaa1ae5f61bb6e77523d5f2bcd465e9edbaf72a417dbc8b7e46ef1f690c35"
