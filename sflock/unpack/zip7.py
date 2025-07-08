@@ -7,13 +7,13 @@ import os
 import tempfile
 
 from sflock.abstracts import Unpacker
-from sflock.misc import data_file
+# from sflock.misc import data_file
 
-zip7_binary = data_file(b"7zz.elf")
+# zip7_binary = data_file(b"7zz.elf")
 
 class ZipFile(Unpacker):
     name = "zipfile"
-    exe = zip7_binary
+    exe = "/usr/bin/7zip"
     exts = b".zip"
     magic = "Zip archive data"
 
