@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "SFlock2"
-version = "0.3.74"
+version = "0.3.75"
 description = "Sample staging and detonation utility"
 authors = ["Hatching B.V. <jbr@hatching.io>"]
 license = "GPL-3.0-only" # It's best practice to use SPDX identifiers
@@ -15,20 +15,19 @@ click = "*"
 cryptography = ">=44.0.0"
 olefile = ">=0.43"
 pefile = "*"
+pytest = { version = ">=8.3.4", python = ">=3.8", optional = true }
+mock = { version = ">=5.1.0", python = ">=3.8", optional = true }
+unicorn = { version = ">=2.0.0", python = ">=3.8", optional = true }
+yara-python = { version = ">=4.1.0", python = ">=3.8", optional = true }
+python-magic-bin = {version = ">=0.4.14", markers = "sys_platform == 'win32'", python = ">=3.8", optional = true }
+python-magic = {version = ">=0.4.13", markers = "sys_platform == 'linux'", python = ">=3.8", optional = true }
 
-[tool.poetry.group.dev.dependencies]
-pytest = { version = ">=8.3.4", python = ">=3.8" }
-mock = { version = ">=5.1.0", python = ">=3.8" }
-
-[tool.poetry.group.shellcode.dependencies]
-unicorn = { version = ">=2.0.0", python = ">=3.8" }
-yara-python = { version = ">=4.1.0", python = ">=3.8" }
-
-[tool.poetry.group.windows.dependencies]
-python-magic-bin = {version = ">=0.4.14", markers = "sys_platform == 'win32'", python = ">=3.8"  }
-
-[tool.poetry.group.linux.dependencies]
-python-magic = {version = ">=0.4.13", markers = "sys_platform == 'linux'", python = ">=3.8" }
+[tool.poetry.extras]
+dev = ["pytest", "mock"]
+shellcode = ["unicorn", "yara-python"]
+windows = ["python-magic-bin"]
+linux = ["python-magic"]
+all = ["pytest", "mock", "unicorn", "yara-python"]
 
 [tool.poetry.scripts]
 sflock = "sflock.main:main"
