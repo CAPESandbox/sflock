@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "SFlock2"
-version = "0.3.75"
+version = "0.3.76"
 description = "Sample staging and detonation utility"
 authors = ["Hatching B.V. <jbr@hatching.io>"]
 license = "GPL-3.0-only" # It's best practice to use SPDX identifiers
