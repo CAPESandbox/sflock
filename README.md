@@ -1,6 +1,6 @@
 # sflock
 
-![example workflow](https://github.com/doomedraven/sflock/actions/workflows/pythonpackage.yml/badge.svg)
+![example workflow](https://github.com/doomedraven/sflock/actions/workflows/test.yml/badge.svg)
 
 Sample staging &amp; detonation utility to be used as unpacking engine for
 other analysis tools. Since version 0.3.14 sflock is compatible with Python >= 3.6
