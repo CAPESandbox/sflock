@@ -20,8 +20,8 @@ def get_metadata(f):
     ret = []
     if p.returncode == 0:
         for finfo in p.stdout.split(b'----------')[1].strip(b"\n").split(b"\n\n"):
-            finfo = dict((l.lower().replace(' ','_'), v) for n, v in map(lambda l: l.split(' = ', 1).strip(),
-                                                        finfo.decode().splitlines())
+            finfo = dict((n.lower().replace(' ','_'), v) for n, v in map(lambda l: l.strip().split(' = ', 1),
+                                                        finfo.decode(errors='ignore').splitlines())
                           if v )
             for k in ('size', 'packed_size'):
                 if k in finfo:
