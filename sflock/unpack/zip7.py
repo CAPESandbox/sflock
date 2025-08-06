@@ -15,7 +15,13 @@ zip7_binary = data_file(b"7zz.elf")
 
 def get_metadata(f):
 
-    p = run([data_file(b'zipjail.elf'), f.filepath, b'/dev/null', b'--', zip7_binary, b'l', b'-slt', f.filepath],
+    fp = f.filepath
+    clean = False
+    if fp is None:
+        fp = f.temp_path(".bin") # extension doesn't matter
+        clean = True
+
+    p = run([data_file(b'zipjail.elf'), fp, b'/dev/null', b'--', zip7_binary, b'l', b'-slt', fp],
             capture_output=True)
     ret = []
     if p.returncode == 0:
@@ -30,6 +36,10 @@ def get_metadata(f):
                 if k in finfo:
                     finfo[k] = datetime.datetime.fromisoformat(finfo[k])
             ret.append(finfo)
+
+    if clean:
+        os.unlink(fp)
+
     return ret or None
 
 class ZipFile(Unpacker):
