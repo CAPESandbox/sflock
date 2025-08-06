@@ -5,13 +5,32 @@
 
 import os
 import tempfile
-
+import datetime
+from subprocess import run
 from sflock.abstracts import Unpacker
 from sflock.misc import data_file
 
 zip7_binary = data_file(b"7zz.elf")
 # zip7_binary = "/usr/bin/7zip"
 
+def get_metadata(f):
+
+    p = run([data_file(b'zipjail.elf'), f.filepath, b'/dev/null', b'--', zip7_binary, b'l', b'-slt', f.filepath],
+            capture_output=True)
+    ret = []
+    if p.returncode == 0:
+        for finfo in p.stdout.split(b'----------')[1].strip(b"\n").split(b"\n\n"):
+            finfo = dict((l.lower().replace(' ','_'), v) for n, v in map(lambda l: l.split(' = ', 1).strip(),
+                                                        finfo.decode().splitlines())
+                          if v )
+            for k in ('size', 'packed_size'):
+                if k in finfo:
+                    finfo[k] = int(finfo[k])
+            for k in ('modified', 'created', 'accessed'):
+                if k in finfo:
+                    finfo[k] = datetime.datetime.fromisoformat(finfo[k])
+            ret.append(finfo)
+    return ret or None
 
 class ZipFile(Unpacker):
     name = "zipfile"
@@ -57,6 +76,8 @@ class ZipFile(Unpacker):
 
         return self.process_directory(dirpath, duplicates, password=password)
 
+    def get_metadata(self):
+        return get_metadata(self.f)
 
 class Zip7File(Unpacker):
     name = "7zfile"
@@ -84,6 +105,9 @@ class Zip7File(Unpacker):
             os.unlink(filepath)
 
         return self.process_directory(dirpath, duplicates)
+
+    def get_metadata(self):
+        return get_metadata(self.f)
 
 
 class GzipFile(Unpacker):
@@ -137,6 +161,8 @@ class LzhFile(Unpacker):
 
         return self.process_directory(dirpath, duplicates)
 
+    def get_metadata(self):
+        return get_metadata(self.f)
 
 class VHDFile(Unpacker):
     name = "vhdfile"
@@ -163,6 +189,9 @@ class VHDFile(Unpacker):
             os.unlink(filepath)
 
         return self.process_directory(dirpath, duplicates)
+
+    def get_metadata(self):
+        return get_metadata(self.f)
 
 
 class WimFile(Unpacker):
@@ -241,3 +270,6 @@ class NSIS(Unpacker):
             os.unlink(filepath)
 
         return self.process_directory(dirpath, duplicates)
+
+    def get_metadata(self):
+        return get_metadata(self.f)
