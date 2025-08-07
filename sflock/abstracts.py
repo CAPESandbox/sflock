@@ -113,6 +113,7 @@ class Unpacker(object):
                     # neither unpacks anything, then f.unpacker will be set to
                     # the last available unpacker.
                     f.unpacker = unpacker
+                    f.metadata = plugin.get_metadata()
                     if f.children:
                         break
 
@@ -164,6 +165,8 @@ class Unpacker(object):
             if value:
                 return value
 
+    def get_metadata(self):
+        return None
 
 class Decoder(object):
     """Abstract class for Decoder engines."""
@@ -216,6 +219,7 @@ class File(object):
         self.unpacker = None
         self.parent = None
         self.preview = True
+        self.metadata = None
 
         # Extract the filename from any of the available path components.
         self.filename = ntpath.basename(filename or self.relapath or self.filepath or b"").rstrip(b"\x00") or None
