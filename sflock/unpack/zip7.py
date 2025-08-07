@@ -25,21 +25,23 @@ def get_metadata(f):
             capture_output=True)
     ret = []
     if p.returncode == 0:
-        for finfo in p.stdout.split(b'----------')[1].strip(b"\n").split(b"\n\n"):
-            finfo_data = {}
-            for line in finfo.decode(errors="ignore").splitlines():
-                if " = " in line:
-                    key, value = line.split(" = ", 1)
-                    if value.strip():
-                        finfo_data[key.strip().lower().replace(" ", "_")] = value.strip()
-            finfo = finfo_data
-            for k in ('size', 'packed_size'):
-                if k in finfo:
-                    finfo[k] = int(finfo[k])
-            for k in ('modified', 'created', 'accessed'):
-                if k in finfo:
-                    finfo[k] = datetime.datetime.fromisoformat(finfo[k])
-            ret.append(finfo)
+        splited_finfo = p.stdout.split(b'----------')
+        if len(splited_finfo) >= 2:
+            for finfo in splited_finfo[1].strip(b"\n").split(b"\n\n"):
+                finfo_data = {}
+                for line in finfo.decode(errors="ignore").splitlines():
+                    if " = " in line:
+                        key, value = line.split(" = ", 1)
+                        if value.strip():
+                            finfo_data[key.strip().lower().replace(" ", "_")] = value.strip()
+                finfo = finfo_data
+                for k in ('size', 'packed_size'):
+                    if k in finfo:
+                        finfo[k] = int(finfo[k])
+                for k in ('modified', 'created', 'accessed'):
+                    if k in finfo:
+                        finfo[k] = datetime.datetime.fromisoformat(finfo[k])
+                ret.append(finfo)
 
     if clean:
         os.unlink(fp)
