@@ -45,7 +45,7 @@ def get_metadata(f):
                             time_info = time_info.rsplit(".", 1)[0]
                         # py 3.12
                         # finfo[k] = datetime.datetime.fromisoformat(finfo[k])
-                        finfo[k] = datetime.datetime.strptime(time_info, "%Y-%m-%dT%H:%M:%S")
+                        finfo[k] = datetime.datetime.strptime(time_info, "%Y-%m-%d %H:%M:%S")
                 ret.append(finfo)
 
     if clean:
