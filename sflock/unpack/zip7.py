@@ -26,9 +26,13 @@ def get_metadata(f):
     ret = []
     if p.returncode == 0:
         for finfo in p.stdout.split(b'----------')[1].strip(b"\n").split(b"\n\n"):
-            finfo = dict((n.lower().replace(' ','_'), v) for n, v in map(lambda l: l.strip().split(' = ', 1),
-                                                        finfo.decode(errors='ignore').splitlines())
-                          if v )
+            finfo_data = {}
+            for line in finfo.decode(errors="ignore").splitlines():
+                if " = " in line:
+                    key, value = line.split(" = ", 1)
+                    if value.strip():
+                        finfo_data[key.strip().lower().replace(" ", "_")] = value.strip()
+            finfo = finfo_data
             for k in ('size', 'packed_size'):
                 if k in finfo:
                     finfo[k] = int(finfo[k])
