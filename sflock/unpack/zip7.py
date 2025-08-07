@@ -40,7 +40,12 @@ def get_metadata(f):
                         finfo[k] = int(finfo[k])
                 for k in ('modified', 'created', 'accessed'):
                     if k in finfo:
-                        finfo[k] = datetime.datetime.fromisoformat(finfo[k])
+                        time_info = finfo[k]
+                        if time_info.endswith('Z'):
+                            time_info = time_info[:-1] + "+0000"
+                        # py 3.12
+                        # finfo[k] = datetime.datetime.fromisoformat(finfo[k])
+                        finfo[k] = datetime.datetime.strptime(time_info, "%Y-%m-%dT%H:%M:%S%z")
                 ret.append(finfo)
 
     if clean:
