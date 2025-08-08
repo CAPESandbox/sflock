@@ -168,6 +168,7 @@ class Unpacker(object):
     def get_metadata(self):
         return None
 
+
 class Decoder(object):
     """Abstract class for Decoder engines."""
 

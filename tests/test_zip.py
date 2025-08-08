@@ -236,3 +236,10 @@ class TestZipfile(object):
         assert z.handles() is True
         assert z.f.package == "zip"
         assert z.f.preview is True
+
+    def test_zip_metadata(self):
+        t = unpack(b"tests/files/zip_plain.zip", filename=b"foo")
+        assert t.metadata == [{'path': 'sflock.txt', 'folder': '-', 'size': 17, 'packed_size': 17,
+                               'modified': '2015-08-10T11:47:00+00:00', 'attributes': '-rw-rw-r--', 'encrypted': '-',
+                               'crc': '028E4831', 'method': 'Store', 'characteristics': 'UT:MA:1 ux', 'host_os': 'Unix',
+                               'version': '10', 'volume_index': '0', 'offset': '0'}]
