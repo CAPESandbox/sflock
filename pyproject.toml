@@ -1,6 +1,7 @@
 [tool.poetry]
 name = "SFlock2"
-version = "0.3.77"
+dynamic = ["version"]
+# version = "0.3.77"
 description = "Sample staging and detonation utility"
 authors = ["Hatching B.V. <jbr@hatching.io>"]
 license = "GPL-3.0-only" # It's best practice to use SPDX identifiers
@@ -37,6 +38,15 @@ windows = ["python-magic-bin"]
 [tool.poetry.scripts]
 sflock = "sflock.main:main"
 
+# [build-system]
+# requires = ["poetry-core>=2.0.0"]
+# build-backend = "poetry.core.masonry.api"
+
 [build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["setuptools>=61.0", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools_scm]
+# Optional: configuration can go here if needed
+# For example, to use a file for local versioning:
+write_to = "sflock/__version__.py"
