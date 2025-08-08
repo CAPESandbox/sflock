@@ -74,14 +74,15 @@ def get_metadata_7z(f):
     if p.returncode == 0:
         _, _, out = p.stdout.partition(b'----------')
         if out:
-            for finfo in out.strip(b"\n").split(b"\n\n"):
-                finfo_data = {}
-                for line in finfo.decode(errors="ignore").splitlines():
+            for finfo_data in out.strip(b"\n").split(b"\n\n"):
+                finfo = {}
+                for line in finfo_data.decode(errors="replace").splitlines():
                     if " = " in line:
                         key, value = line.split(" = ", 1)
                         if value.strip():
-                            finfo_data[key.strip().lower().replace(" ", "_")] = value.strip()
-                finfo = finfo_data
+                            finfo[key.strip().lower().replace(" ", "_")] = value.strip()
+                if not finfo:
+                    continue
                 for k in ('size', 'packed_size'):
                     if k in finfo:
                         finfo[k] = int(finfo[k])
@@ -93,4 +94,4 @@ def get_metadata_7z(f):
     if clean:
         os.unlink(fp)
 
-    return ret or None
+    return ret
