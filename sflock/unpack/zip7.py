@@ -5,53 +5,12 @@
 
 import os
 import tempfile
-import datetime
-from subprocess import run
 from sflock.abstracts import Unpacker
-from sflock.misc import data_file
+from sflock.misc import data_file, get_metadata_7z
 
 zip7_binary = data_file(b"7zz.elf")
 # zip7_binary = "/usr/bin/7zip"
 
-def get_metadata(f):
-
-    fp = f.filepath
-    clean = False
-    if fp is None:
-        fp = f.temp_path(".bin") # extension doesn't matter
-        clean = True
-
-    p = run([data_file(b'zipjail.elf'), fp, b'/dev/null', b'--', zip7_binary, b'l', b'-slt', fp],
-            capture_output=True)
-    ret = []
-    if p.returncode == 0:
-        splited_finfo = p.stdout.split(b'----------')
-        if len(splited_finfo) >= 2:
-            for finfo in splited_finfo[1].strip(b"\n").split(b"\n\n"):
-                finfo_data = {}
-                for line in finfo.decode(errors="ignore").splitlines():
-                    if " = " in line:
-                        key, value = line.split(" = ", 1)
-                        if value.strip():
-                            finfo_data[key.strip().lower().replace(" ", "_")] = value.strip()
-                finfo = finfo_data
-                for k in ('size', 'packed_size'):
-                    if k in finfo:
-                        finfo[k] = int(finfo[k])
-                for k in ('modified', 'created', 'accessed'):
-                    if k in finfo:
-                        time_info = finfo[k]
-                        if "." in time_info:
-                            time_info = time_info.rsplit(".", 1)[0]
-                        # py 3.12
-                        # finfo[k] = datetime.datetime.fromisoformat(finfo[k])
-                        finfo[k] = datetime.datetime.strptime(time_info, "%Y-%m-%d %H:%M:%S")
-                ret.append(finfo)
-
-    if clean:
-        os.unlink(fp)
-
-    return ret or None
 
 class ZipFile(Unpacker):
     name = "zipfile"
@@ -98,7 +57,7 @@ class ZipFile(Unpacker):
         return self.process_directory(dirpath, duplicates, password=password)
 
     def get_metadata(self):
-        return get_metadata(self.f)
+        return get_metadata_7z(self.f)
 
 class Zip7File(Unpacker):
     name = "7zfile"
@@ -128,7 +87,7 @@ class Zip7File(Unpacker):
         return self.process_directory(dirpath, duplicates)
 
     def get_metadata(self):
-        return get_metadata(self.f)
+        return get_metadata_7z(self.f)
 
 
 class GzipFile(Unpacker):
@@ -183,7 +142,7 @@ class LzhFile(Unpacker):
         return self.process_directory(dirpath, duplicates)
 
     def get_metadata(self):
-        return get_metadata(self.f)
+        return get_metadata_7z(self.f)
 
 class VHDFile(Unpacker):
     name = "vhdfile"
@@ -212,7 +171,7 @@ class VHDFile(Unpacker):
         return self.process_directory(dirpath, duplicates)
 
     def get_metadata(self):
-        return get_metadata(self.f)
+        return get_metadata_7z(self.f)
 
 
 class WimFile(Unpacker):
@@ -293,4 +252,4 @@ class NSIS(Unpacker):
         return self.process_directory(dirpath, duplicates)
 
     def get_metadata(self):
-        return get_metadata(self.f)
+        return get_metadata_7z(self.f)

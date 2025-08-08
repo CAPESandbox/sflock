@@ -166,7 +166,8 @@ class Unpacker(object):
                 return value
 
     def get_metadata(self):
-        return None
+        return []
+
 
 class Decoder(object):
     """Abstract class for Decoder engines."""
@@ -219,7 +220,7 @@ class File(object):
         self.unpacker = None
         self.parent = None
         self.preview = True
-        self.metadata = None
+        self.metadata = []
 
         # Extract the filename from any of the available path components.
         self.filename = ntpath.basename(filename or self.relapath or self.filepath or b"").rstrip(b"\x00") or None

@@ -139,6 +139,12 @@ class Test7zFile(object):
         # assert files[0].selected is True
         # assert files[0].duplicate is False
 
+    def test_zip_metadata(self):
+        t = unpack(b"tests/files/7z_plain.7z", filename=b"foo")
+        assert t.metadata == [
+            {'path': 'bar.txt', 'size': 12, 'packed_size': 17, 'modified': '2016-09-03T15:37:30+00:00',
+             'attributes': 'A -rw-rw-r--', 'crc': 'AF083B2D', 'encrypted': '-', 'method': 'LZMA:16', 'block': '0'}]
+
 
 @pytest.mark.skipif("Zip7File(None).supported()")
 def test_no7z_plain():
