@@ -77,10 +77,9 @@ def get_metadata_7z(f):
             for finfo_data in out.strip(b"\n").split(b"\n\n"):
                 finfo = {}
                 for line in finfo_data.decode(errors="replace").splitlines():
-                    if " = " in line:
-                        key, value = line.split(" = ", 1)
-                        if value.strip():
-                            finfo[key.strip().lower().replace(" ", "_")] = value.strip()
+                    key, _, value = line.partition(" = ")
+                    if value.strip():
+                        finfo[key.strip().lower().replace(" ", "_")] = value.strip()
                 if not finfo:
                     continue
                 for k in ('size', 'packed_size'):
