@@ -2,10 +2,10 @@
 # This file is part of SFlock - http://www.sflock.org/.
 # See the file 'docs/LICENSE.txt' for copying permission.
 
+import datetime
 import os
 import importlib
 from dateutil.parser import parse as dtparse
-from dateutil.tz import gettz
 from subprocess import run
 import sflock
 
@@ -42,25 +42,6 @@ def make_list(obj):
     return [obj]
 
 
-def naive_to_utc(naive_datetime_str):
-    """
-    Parses a naive datetime string, assumes it's in the local timezone,
-    and converts it to a timezone-aware UTC datetime object.
-
-    Args:
-        naive_datetime_str: A string representing a naive datetime.
-
-    Returns:
-        A timezone-aware datetime object in UTC.
-    """
-
-    naive_dt = dtparse(naive_datetime_str)
-    aware_dt_local = naive_dt.replace(tzinfo=gettz())
-    # If local tz is already UTC, this conversion is a no-op.
-    utc_dt = aware_dt_local.astimezone(gettz('UTC'))
-    return utc_dt
-
-
 def get_metadata_7z(f):
     fp = f.filepath
     clean = False
@@ -69,7 +50,7 @@ def get_metadata_7z(f):
         clean = True
 
     p = run([data_file(b'zipjail.elf'), fp, b'/dev/null', b'--', data_file(b"7zz.elf"), b'l', b'-slt', fp],
-            capture_output=True)
+            capture_output=True, env=dict(os.environ, TZ="UTC"))
     ret = []
     if p.returncode == 0:
         _, _, out = p.stdout.partition(b'----------')
@@ -87,7 +68,7 @@ def get_metadata_7z(f):
                         finfo[k] = int(finfo[k])
                 for k in ('modified', 'created', 'accessed'):
                     if k in finfo:
-                        finfo[k] = naive_to_utc(finfo[k]).isoformat()
+                        finfo[k] = dtparse(finfo[k]).replace(tzinfo=datetime.timezone.utc).isoformat()
                 ret.append(finfo)
 
     if clean:
