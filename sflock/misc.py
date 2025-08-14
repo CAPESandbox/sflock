@@ -50,7 +50,7 @@ def get_metadata_7z(f):
         clean = True
 
     p = run([data_file(b'zipjail.elf'), fp, b'/dev/null', b'--', data_file(b"7zz.elf"), b'l', b'-slt', fp],
-            capture_output=True, env={"TZ": "UTC"})
+            capture_output=True, env=dict(os.environ, TZ="UTC"))
     ret = []
     if p.returncode == 0:
         _, _, out = p.stdout.partition(b'----------')
