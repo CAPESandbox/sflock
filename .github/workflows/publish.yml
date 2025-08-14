@@ -58,7 +58,7 @@ jobs:
           name: python-package-distributions
           path: dist/
       - name: Publish distribution 📦 to PyPI
-        uses: pypa/gh-action-pypi-publish@v1
+        uses: pypa/gh-action-pypi-publish@release/v1
 
   sign-and-attach-to-release:
     name: Sign and attach distributions to GitHub Release
