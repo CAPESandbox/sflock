@@ -253,3 +253,29 @@ class NSIS(Unpacker):
 
     def get_metadata(self):
         return get_metadata_7z(self.f)
+
+class MachoFat(Unpacker):
+    name = "macho-fat"
+    exe = zip7_binary
+    exts = ()
+    magic = "Mach-O universal binary with "
+
+    def unpack(self, password=None, duplicates=None):
+        dirpath = tempfile.mkdtemp()
+
+        if self.f.filepath:
+            filepath = self.f.filepath
+            temporary = False
+        else:
+            filepath = self.f.temp_path(".7z")
+            temporary = True
+
+        ret = self.zipjail(filepath, dirpath, "x", "-o%s" % dirpath, filepath)
+        if not ret:
+            return []
+
+        if temporary:
+            os.unlink(filepath)
+
+        return self.process_directory(dirpath, duplicates)
+
