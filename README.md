@@ -72,3 +72,9 @@ SFlock therefore wraps execution of the native tools in [zipjail][], a
 usermode sandbox written exactly for this purpose.
 
 [zipjail]: https://github.com/jbremer/tracy/tree/master/src/zipjail
+
+Documentation
+=============
+[deepwiki]
+
+[deepwiki]: https://deepwiki.com/CAPESandbox/sflock
