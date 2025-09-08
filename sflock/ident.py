@@ -630,7 +630,7 @@ def identify(f, check_shellcode: bool = False):
 
     with ThreadPoolExecutor() as executor:
         futures = [executor.submit(identifier, f) for identifier in identifiers]
-        for future in futures:
+        for future in as_completed(futures):
             package = future.result()
             if package:
                 return package
