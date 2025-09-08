@@ -91,6 +91,7 @@ class Unpacker(object):
     @staticmethod
     def guess(f):
         """Guesses the unpacker based on the filename and/or contents."""
+        """
         if f.filename:
             for ext, plugin in Unpacker.extensions.items():
                 if f.filename.lower().endswith(ext):
@@ -101,7 +102,7 @@ class Unpacker(object):
                 continue
             if magic in f.magic:
                 yield plugin.name
-
+        """
         for plugin in Unpacker.plugins.values():
             if plugin(f).handles():
                 yield plugin.name
