@@ -98,6 +98,8 @@ class Unpacker(object):
                     yield plugin.name
 
         for magic, plugin in Unpacker.magics.items():
+            if not magic:
+                continue
             if magic in f.magic:
                 yield plugin.name
 
