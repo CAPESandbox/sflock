@@ -1,14 +1,24 @@
 # Copyright (C) 2015-2018 Jurriaan Bremer.
-# This file is part of SFlock - http://www.sflock.org/.
+# This file is of SFlock - http://www.sflock.org/.
 # See the file 'docs/LICENSE.txt' for copying permission.
 
 import datetime
 import os
 import importlib
+import platform
 from dateutil.parser import parse as dtparse
 from subprocess import run
 import sflock
 
+def get_os():
+    """Returns the operating system."""
+    if platform.system() == "Linux":
+        return "linux"
+    if platform.system() == "Windows":
+        return "windows"
+    if platform.system() == "Darwin":
+        return "darwin"
+    return "unknown"
 
 def import_plugins(dirpath, module_prefix, namespace, class_):
     """Import plugins of type `class` located at `dirpath` into the
@@ -27,6 +37,14 @@ def import_plugins(dirpath, module_prefix, namespace, class_):
         namespace[subclass.__name__] = subclass
         plugins[subclass.name.lower()] = subclass
         class_.plugins[subclass.name.lower()] = subclass
+
+        if hasattr(subclass, "exts"):
+            for ext in make_list(subclass.exts):
+                class_.extensions[ext] = subclass
+
+        if hasattr(subclass, "magic"):
+            for magic in make_list(subclass.magic):
+                class_.magics[magic] = subclass
     return plugins
 
 

@@ -599,7 +599,7 @@ def identify(f, check_shellcode: bool = False):
                 #       MZ for MS-DOS -> but is DLL
                 package = exec_magics[magic_types]
                 if package in ("exe", "dll"):
-                    pe = pefile.PE(data=f.contents, fast_load=True)
+                    pe = pefile.PE(data=f.header, fast_load=True)
                     return "dll" if pe.is_dll() else "exe"
         return None
 
@@ -636,7 +636,7 @@ def identify(f, check_shellcode: bool = False):
             #       MZ for MS-DOS -> but is DLL
             package = magics[magic_types]
             if package in ("exe", "dll"):
-                pe = pefile.PE(data=f.contents, fast_load=True)
+                pe = pefile.PE(data=f.header, fast_load=True)
                 return "dll" if pe.is_dll() else "exe"
             return magics[magic_types]
     if f.mime in mimes:

@@ -2,9 +2,6 @@
 # This file is part of SFlock - http://www.sflock.org/.
 # See the file 'docs/LICENSE.txt' for copying permission.
 
-from __future__ import absolute_import
-from __future__ import print_function
-
 import click
 import glob
 import io
@@ -16,14 +13,16 @@ import zipfile
 from sflock.abstracts import File, Unpacker
 from sflock.exception import IncorrectUsageException
 from sflock.ident import identify
-from sflock.misc import make_list
+from sflock.misc import make_list, get_os
 from sflock.unpack import plugins
+from concurrent.futures import ThreadPoolExecutor
 
 
-def supported():
+def supported(platform: str = None):
     """Returns the supported extensions for this machine. Support for the
     unpacking of numerous file extensions depends on different system packages
     which should be installed on the machine."""
+
     ret = []
     for plugin in plugins.values():
         if plugin(None).supported():
@@ -100,9 +99,10 @@ def process_file(filepath, extract):
 
 
 def process_directory(dirpath, extract):
-    for rootpath, directories, filenames in os.walk(dirpath):
-        for filename in filenames:
-            process_file(os.path.join(rootpath, filename), extract)
+    with ThreadPoolExecutor() as executor:
+        for rootpath, directories, filenames in os.walk(dirpath):
+            for filename in filenames:
+                executor.submit(process_file, os.path.join(rootpath, filename), extract)
 
 
 @click.command()
