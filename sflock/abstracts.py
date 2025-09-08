@@ -32,6 +32,8 @@ class Unpacker(object):
 
     # Initiated at runtime - contains each Unpacker subclass.
     plugins = {}
+    extensions = {}
+    magics = {}
 
     def __init__(self, f):
         self.f = f
@@ -72,7 +74,7 @@ class Unpacker(object):
         return not return_code
 
     def handles(self):
-        if self.f.filename and self.f.filename and self.f.filename.lower().endswith(self.exts):
+        if self.f.filename and self.f.filename.lower().endswith(self.exts):
             return True
 
         if self.f.package and self.f.package in make_list(self.package or []):
@@ -89,6 +91,15 @@ class Unpacker(object):
     @staticmethod
     def guess(f):
         """Guesses the unpacker based on the filename and/or contents."""
+        if f.filename:
+            for ext, plugin in Unpacker.extensions.items():
+                if f.filename.lower().endswith(ext):
+                    yield plugin.name
+
+        for magic, plugin in Unpacker.magics.items():
+            if magic in f.magic:
+                yield plugin.name
+
         for plugin in Unpacker.plugins.values():
             if plugin(f).handles():
                 yield plugin.name
@@ -106,7 +117,7 @@ class Unpacker(object):
             for unpacker in Unpacker.guess(f):
                 plugin = self.plugins[unpacker](f)
                 if plugin.supported():
-                    f.children = plugin.unpack(password, duplicates)
+                    f.children = asyncio.run(plugin.unpack(password, duplicates))
                     # TODO Improve this. The following is simply a guesstimate
                     # towards which unpacker is actually used. If there are
                     # multiple unpackers eligible for the current file, but
@@ -237,6 +248,7 @@ class File(object):
         self._stream = stream
         self._ole = None
         self._ole_tried = False
+        self._header = None
 
     @classmethod
     def from_path(self, filepath, relapath=None, filename=None, password=None):
@@ -275,15 +287,21 @@ class File(object):
         return self._sha256
 
     @property
+    def header(self):
+        if not self._header and self.filesize:
+            self._header = self.stream.read(1024 * 1024)
+        return self._header or b""
+
+    @property
     def magic(self):
-        if not self._magic and self.filesize:
-            self._magic = magic.from_buffer(self.stream.read(1024 * 1024))
+        if not self._magic:
+            self._magic = magic.from_buffer(self.header)
         return self._magic or ""
 
     @property
     def mime(self):
-        if not self._mime and self.filesize:
-            self._mime = magic.from_buffer(self.stream.read(1024 * 1024), mime=True)
+        if not self._mime:
+            self._mime = magic.from_buffer(self.header, mime=True)
         return self._mime or ""
 
     @property

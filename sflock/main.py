@@ -16,17 +16,22 @@ import zipfile
 from sflock.abstracts import File, Unpacker
 from sflock.exception import IncorrectUsageException
 from sflock.ident import identify
-from sflock.misc import make_list
+from sflock.misc import make_list, get_os
 from sflock.unpack import plugins
 
 
-def supported():
+def supported(platform: str = None):
     """Returns the supported extensions for this machine. Support for the
     unpacking of numerous file extensions depends on different system packages
     which should be installed on the machine."""
+    if platform is None:
+        platform = get_os()
+
     ret = []
     for plugin in plugins.values():
         if plugin(None).supported():
+            if platform != "windows" and plugin.name in ("mso", "msg"):
+                continue
             for ext in make_list(plugin.exts):
                 ret.append(ext)
     return ret
@@ -99,10 +104,13 @@ def process_file(filepath, extract):
     extract and f.extract(extract)
 
 
+from concurrent.futures import ThreadPoolExecutor
+
 def process_directory(dirpath, extract):
-    for rootpath, directories, filenames in os.walk(dirpath):
-        for filename in filenames:
-            process_file(os.path.join(rootpath, filename), extract)
+    with ThreadPoolExecutor() as executor:
+        for rootpath, directories, filenames in os.walk(dirpath):
+            for filename in filenames:
+                executor.submit(process_file, os.path.join(rootpath, filename), extract)
 
 
 @click.command()

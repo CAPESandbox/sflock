@@ -21,12 +21,21 @@ Ubuntu/Debian-like systems. For optimal usage it is recommended to install the
 following packages alongside sflock. It is currently not possible to run the
 unpackers that require native tooling support on non-Linux platforms.
 
+On Ubuntu/Debian-like systems, the following packages are required:
+
 ```bash
 $ sudo apt-get install rar unace-nonfree cabextract lzip libjpeg8-dev zlib1g-dev zpaq gnupg
 ```
 
+On macOS, the following packages can be installed with Homebrew:
+
+```bash
+$ brew install rar unar cabextract lzip jpeg zlib zpaq gnupg
+```
+
 Installation of sflock itself may be done as follows.
 
+On Linux:
 ```bash
 $ sudo pip install -U "sflock2[linux]"
 ```
@@ -36,6 +45,28 @@ Or in a virtualenv environment.
 ```bash
 (venv)$ pip install -U "sflock2[linux]"
 ```
+
+On macOS:
+```bash
+$ pip install -U "sflock2[darwin]"
+```
+
+Or in a virtualenv environment.
+
+```bash
+(venv)$ pip install -U "sflock2[darwin]"
+```
+
+On Windows:
+```bash
+> pip install -U "sflock2[windows]"
+```
+
+Or in a virtualenv environment.
+```bash
+(venv)> pip install -U "sflock2[windows]"
+```
+
 
 Supported archives
 ==================

@@ -4,6 +4,8 @@
 import os
 import re
 from collections import OrderedDict
+from concurrent.futures import ThreadPoolExecutor
+
 
 import pefile
 from sflock.auxiliary.decode_vbe_jse import decode_file as vbe_decode_file
@@ -599,7 +601,7 @@ def identify(f, check_shellcode: bool = False):
                 #       MZ for MS-DOS -> but is DLL
                 package = exec_magics[magic_types]
                 if package in ("exe", "dll"):
-                    pe = pefile.PE(data=f.contents, fast_load=True)
+                    pe = pefile.PE(data=f.header, fast_load=True)
                     return "dll" if pe.is_dll() else "exe"
         return None
 
@@ -608,10 +610,12 @@ def identify(f, check_shellcode: bool = False):
             if f.filename.endswith(extensions) and not f.contents.startswith(b"MZ"):
                 return package
 
-    for identifier in identifiers_special:
-        package = identifier(f)
-        if package:
-            return package
+    with ThreadPoolExecutor() as executor:
+        futures = [executor.submit(identifier, f) for identifier in identifiers_special]
+        for future in futures:
+            package = future.result()
+            if package:
+                return package
 
     # Trusted mimes and magics should be applied before identifiers which could run on files within archives
     if f.mime in trusted_archive_mimes:
@@ -624,10 +628,12 @@ def identify(f, check_shellcode: bool = False):
         if f.magic.startswith(magic_types):
             return trusted_archive_magics[magic_types]
 
-    for identifier in identifiers:
-        package = identifier(f)
-        if package:
-            return package
+    with ThreadPoolExecutor() as executor:
+        futures = [executor.submit(identifier, f) for identifier in identifiers]
+        for future in futures:
+            package = future.result()
+            if package:
+                return package
 
     for magic_types in magics:
         if f.magic.startswith(magic_types):
@@ -636,7 +642,7 @@ def identify(f, check_shellcode: bool = False):
             #       MZ for MS-DOS -> but is DLL
             package = magics[magic_types]
             if package in ("exe", "dll"):
-                pe = pefile.PE(data=f.contents, fast_load=True)
+                pe = pefile.PE(data=f.header, fast_load=True)
                 return "dll" if pe.is_dll() else "exe"
             return magics[magic_types]
     if f.mime in mimes:
