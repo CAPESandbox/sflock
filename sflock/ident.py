@@ -4,7 +4,6 @@
 import os
 import re
 from collections import OrderedDict
-from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import pefile
 from sflock.auxiliary.decode_vbe_jse import decode_file as vbe_decode_file
@@ -625,12 +624,10 @@ def identify(f, check_shellcode: bool = False):
         if f.magic.startswith(magic_types):
             return trusted_archive_magics[magic_types]
 
-    with ThreadPoolExecutor() as executor:
-        futures = [executor.submit(identifier, f) for identifier in identifiers]
-        for future in as_completed(futures):
-            package = future.result()
-            if package:
-                return package
+    for identifier in identifiers_special:
+        package = identifier(f)
+        if package:
+            return package
 
     for magic_types in magics:
         if f.magic.startswith(magic_types):

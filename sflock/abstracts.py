@@ -3,7 +3,6 @@
 # This file is part of SFlock - http://www.sflock.org/.
 # See the file 'docs/LICENSE.txt' for copying permission.
 
-import asyncio
 import hashlib
 import io
 import magic
@@ -120,7 +119,7 @@ class Unpacker(object):
             for unpacker in Unpacker.guess(f):
                 plugin = self.plugins[unpacker](f)
                 if plugin.supported():
-                    f.children = asyncio.run(plugin.unpack(password, duplicates))
+                    f.children = plugin.unpack(password, duplicates)
                     # TODO Improve this. The following is simply a guesstimate
                     # towards which unpacker is actually used. If there are
                     # multiple unpackers eligible for the current file, but
