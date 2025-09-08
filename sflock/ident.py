@@ -4,8 +4,7 @@
 import os
 import re
 from collections import OrderedDict
-from concurrent.futures import ThreadPoolExecutor
-
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import pefile
 from sflock.auxiliary.decode_vbe_jse import decode_file as vbe_decode_file
