@@ -38,11 +38,13 @@ def import_plugins(dirpath, module_prefix, namespace, class_):
         plugins[subclass.name.lower()] = subclass
         class_.plugins[subclass.name.lower()] = subclass
 
-        for ext in make_list(subclass.exts):
-            class_.extensions[ext] = subclass
+        if hasattr(subclass, "exts"):
+            for ext in make_list(subclass.exts):
+                class_.extensions[ext] = subclass
 
-        for magic in make_list(subclass.magic):
-            class_.magics[magic] = subclass
+        if hasattr(subclass, "magic"):
+            for magic in make_list(subclass.magic):
+                class_.magics[magic] = subclass
     return plugins
 
 
