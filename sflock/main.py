@@ -2,9 +2,6 @@
 # This file is part of SFlock - http://www.sflock.org/.
 # See the file 'docs/LICENSE.txt' for copying permission.
 
-from __future__ import absolute_import
-from __future__ import print_function
-
 import click
 import glob
 import io
@@ -18,6 +15,7 @@ from sflock.exception import IncorrectUsageException
 from sflock.ident import identify
 from sflock.misc import make_list, get_os
 from sflock.unpack import plugins
+from concurrent.futures import ThreadPoolExecutor
 
 
 def supported(platform: str = None):
@@ -103,8 +101,6 @@ def process_file(filepath, extract):
 
     extract and f.extract(extract)
 
-
-from concurrent.futures import ThreadPoolExecutor
 
 def process_directory(dirpath, extract):
     with ThreadPoolExecutor() as executor:
