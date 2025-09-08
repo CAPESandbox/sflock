@@ -297,15 +297,24 @@ class File(object):
 
     @property
     def magic(self):
+        if not self._magic and self.filesize:
+            self._magic = magic.from_buffer(self.stream.read(1024 * 1024))
+        """
         if not self._magic:
             self._magic = magic.from_buffer(self.header)
+        """
         return self._magic or ""
 
     @property
     def mime(self):
+        if not self._mime and self.filesize:
+            self._mime = magic.from_buffer(self.stream.read(1024 * 1024), mime=True)
+        """
         if not self._mime:
             self._mime = magic.from_buffer(self.header, mime=True)
+        """
         return self._mime or ""
+
 
     @property
     def magic_human(self):
