@@ -610,12 +610,10 @@ def identify(f, check_shellcode: bool = False):
             if f.filename.endswith(extensions) and not f.contents.startswith(b"MZ"):
                 return package
 
-    with ThreadPoolExecutor() as executor:
-        futures = [executor.submit(identifier, f) for identifier in identifiers_special]
-        for future in futures:
-            package = future.result()
-            if package:
-                return package
+    for identifier in identifiers_special:
+        package = identifier(f)
+        if package:
+            return package
 
     # Trusted mimes and magics should be applied before identifiers which could run on files within archives
     if f.mime in trusted_archive_mimes:
