@@ -624,7 +624,7 @@ def identify(f, check_shellcode: bool = False):
         if f.magic.startswith(magic_types):
             return trusted_archive_magics[magic_types]
 
-    for identifier in identifiers_special:
+    for identifier in identifiers:
         package = identifier(f)
         if package:
             return package
