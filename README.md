@@ -46,17 +46,6 @@ Or in a virtualenv environment.
 (venv)$ pip install -U "sflock2[linux]"
 ```
 
-On macOS:
-```bash
-$ pip install -U "sflock2[darwin]"
-```
-
-Or in a virtualenv environment.
-
-```bash
-(venv)$ pip install -U "sflock2[darwin]"
-```
-
 On Windows:
 ```bash
 > pip install -U "sflock2[windows]"
