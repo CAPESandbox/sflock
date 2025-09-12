@@ -158,7 +158,13 @@ class Unpacker(object):
         for dirpath2, _, filepaths in os.walk(dirpath):
             for filepath in filepaths:
                 filepath = os.path.join(dirpath2, filepath)
-                entries.append(File(relapath=filepath[len(dirpath) + 1 :], password=password, contents=open(filepath, "rb").read()))
+                if os.name == "nt":
+                    # On Windows, we need O_TEMPORARY flag to open
+                    # file with FILE_SHARE_DELETE share mode
+                    stream = open(filepath, "rb", opener=lambda path,flags: os.open(path, flags | os.O_TEMPORARY))
+                else:
+                    stream = open(filepath, "rb")
+                entries.append(File(relapath=filepath[len(dirpath) + 1 :], password=password, stream=stream))
 
         shutil.rmtree(dirpath)
         return self.process(entries, duplicates, password)
@@ -266,8 +272,12 @@ class File(object):
 
     @property
     def contents(self):
-        if self._contents is None and self.filepath:
-            self._contents = open(self.filepath, "rb").read()
+        if self._contents is None:
+            if self.filepath:
+                self._contents = open(self.filepath, "rb").read()
+            elif self._stream is not None:
+                self._stream.seek(0)
+                self._contents = self._stream.read()
         return self._contents
 
     @property
@@ -411,6 +421,13 @@ class File(object):
                 pass
             self._ole_tried = True
         return self._ole
+
+    def close(self):
+        if self._stream:
+            self._stream.close()
+            self._stream = None
+        for child in self.children:
+            child.close()
 
     def raise_no_ole(self, message):
         if self.ole is None:
