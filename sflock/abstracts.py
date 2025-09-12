@@ -272,8 +272,12 @@ class File(object):
 
     @property
     def contents(self):
-        if self._contents is None and self.filepath:
-            self._contents = open(self.filepath, "rb").read()
+        if self._contents is None:
+            if self.filepath:
+                self._contents = open(self.filepath, "rb").read()
+            elif self._stream is not None:
+                self._stream.seek(0)
+                self._contents = self._stream.read()
         return self._contents
 
     @property
