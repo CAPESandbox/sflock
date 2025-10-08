@@ -55,8 +55,10 @@ class Unpacker(object):
             stderr=subprocess.PIPE,
         )
 
-        return_code = p.wait()
+        # https://github.com/CAPESandbox/sflock/pull/60
+        # return_code = p.wait()
         out, err = p.communicate()
+        return_code = p.returncode
 
         if b"Excessive writing caused incomplete unpacking!" in err:
             self.f.error = "files_too_large"
