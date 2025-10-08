@@ -42,7 +42,7 @@ class Test7zFile(object):
         assert files[0].relapath == b"foo/bar.txt"
         assert files[0].parentdirs == [b"foo"]
         assert files[0].contents == b"hello world\n"
-        # assert not files[0].password
+        assert not files[0].password
         assert files[0].magic == "ASCII text"
         assert not files[0].selected
 
@@ -57,7 +57,7 @@ class Test7zFile(object):
         assert files[0].relapath == b"deepfoo/foo/bar.txt"
         assert files[0].parentdirs == [b"deepfoo", b"foo"]
         assert files[0].contents == b"hello world\n"
-        # assert not files[0].password
+        assert not files[0].password
         assert files[0].magic == "ASCII text"
         assert not files[0].selected
 

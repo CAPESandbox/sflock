@@ -32,11 +32,11 @@ class ZipFile(Unpacker):
         if self.f.stream.read(2) == b"PK":
             return True
 
-    def unpack(self, password="infected", duplicates=None):
+    def unpack(self, password=None, duplicates=None):
         dirpath = tempfile.mkdtemp()
 
         if not password:
-            password = "infected"
+            password = ""
 
         if self.f.filepath:
             filepath = self.f.filepath
@@ -67,7 +67,7 @@ class Zip7File(Unpacker):
     # TODO Should we use "isoparser" (check PyPI) instead of 7z?
     magic = "7-zip archive", "ISO 9660", "UDF filesystem data", "XZ compressed data"
 
-    def unpack(self, password="infected", duplicates=None):
+    def unpack(self, password=None, duplicates=None):
         dirpath = tempfile.mkdtemp()
 
         if self.f.filepath:
@@ -78,7 +78,7 @@ class Zip7File(Unpacker):
             temporary = True
         if not password:
             password = ""
-        ret = self.zipjail(filepath, dirpath, "x", "-mmt=off", "-p{}".format(password), "-o{}".format(dirpath), filepath)
+        ret = self.zipjail(filepath, dirpath, "x", "-mmt=off", "-p%s" % password, "-o{}".format(dirpath), filepath)
         if not ret:
             return []
 
