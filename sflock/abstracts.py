@@ -228,6 +228,9 @@ class File(object):
         if isinstance(relapath, str):
             relapath = relapath.encode()
 
+        if isinstance(filepath, str):
+            filepath = filepath.encode()
+
         self.filepath = filepath
         self.relapath = relapath
         self.mode = mode
