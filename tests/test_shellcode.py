@@ -8,10 +8,11 @@ import os.path
 from sflock.main import unpack
 from sflock.ident import identify
 
+
 def f(filename):
     return os.path.join(b"tests", b"files", filename)
 
 
 def test_shellcode64_plain():
-    t = unpack(f(b"shellcode.zip"))
+    t = unpack(f(b"shellcode.zip"), password="infected")
     assert identify(t.children[0], check_shellcode=True) == "Shellcode_x64"

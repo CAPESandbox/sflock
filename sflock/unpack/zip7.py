@@ -32,11 +32,11 @@ class ZipFile(Unpacker):
         if self.f.stream.read(2) == b"PK":
             return True
 
-    def unpack(self, password="infected", duplicates=None):
+    def unpack(self, password=None, duplicates=None):
         dirpath = tempfile.mkdtemp()
 
         if not password:
-            password = "infected"
+            password = ""
 
         if self.f.filepath:
             filepath = self.f.filepath
@@ -59,6 +59,7 @@ class ZipFile(Unpacker):
     def get_metadata(self):
         return get_metadata_7z(self.f)
 
+
 class Zip7File(Unpacker):
     name = "7zfile"
     exe = zip7_binary
@@ -66,7 +67,7 @@ class Zip7File(Unpacker):
     # TODO Should we use "isoparser" (check PyPI) instead of 7z?
     magic = "7-zip archive", "ISO 9660", "UDF filesystem data", "XZ compressed data"
 
-    def unpack(self, password="infected", duplicates=None):
+    def unpack(self, password=None, duplicates=None):
         dirpath = tempfile.mkdtemp()
 
         if self.f.filepath:
@@ -77,14 +78,14 @@ class Zip7File(Unpacker):
             temporary = True
         if not password:
             password = ""
-        ret = self.zipjail(filepath, dirpath, "x", "-mmt=off", "-p{}".format(password), "-o{}".format(dirpath), filepath)
+        ret = self.zipjail(filepath, dirpath, "x", "-mmt=off", "-p%s" % password, "-o{}".format(dirpath), filepath)
         if not ret:
             return []
 
         if temporary:
             os.unlink(filepath)
 
-        return self.process_directory(dirpath, duplicates)
+        return self.process_directory(dirpath, duplicates, password=password)
 
     def get_metadata(self):
         return get_metadata_7z(self.f)
@@ -113,7 +114,7 @@ class GzipFile(Unpacker):
         if temporary:
             os.unlink(filepath)
 
-        return self.process_directory(dirpath, duplicates)
+        return self.process_directory(dirpath, duplicates, password=password)
 
 
 class LzhFile(Unpacker):
@@ -139,10 +140,11 @@ class LzhFile(Unpacker):
         if temporary:
             os.unlink(filepath)
 
-        return self.process_directory(dirpath, duplicates)
+        return self.process_directory(dirpath, duplicates, password=password)
 
     def get_metadata(self):
         return get_metadata_7z(self.f)
+
 
 class VHDFile(Unpacker):
     name = "vhdfile"
@@ -168,7 +170,7 @@ class VHDFile(Unpacker):
         if temporary:
             os.unlink(filepath)
 
-        return self.process_directory(dirpath, duplicates)
+        return self.process_directory(dirpath, duplicates, password=password)
 
     def get_metadata(self):
         return get_metadata_7z(self.f)
@@ -197,7 +199,7 @@ class WimFile(Unpacker):
         if temporary:
             os.unlink(filepath)
 
-        return self.process_directory(dirpath, duplicates)
+        return self.process_directory(dirpath, duplicates, password=password)
 
 
 class XZFile(Unpacker):
@@ -224,7 +226,7 @@ class XZFile(Unpacker):
         if temporary:
             os.unlink(filepath)
 
-        return self.process_directory(dirpath, duplicates)
+        return self.process_directory(dirpath, duplicates, password=password)
 
 
 class NSIS(Unpacker):
@@ -249,10 +251,11 @@ class NSIS(Unpacker):
         if temporary:
             os.unlink(filepath)
 
-        return self.process_directory(dirpath, duplicates)
+        return self.process_directory(dirpath, duplicates, password=password)
 
     def get_metadata(self):
         return get_metadata_7z(self.f)
+
 
 class MachoFat(Unpacker):
     name = "macho-fat"
@@ -277,5 +280,4 @@ class MachoFat(Unpacker):
         if temporary:
             os.unlink(filepath)
 
-        return self.process_directory(dirpath, duplicates)
-
+        return self.process_directory(dirpath, duplicates, password=password)

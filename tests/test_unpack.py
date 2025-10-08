@@ -56,7 +56,7 @@ def test_astree1():
                                 "filename": b"bar.txt",
                                 "filepath": None,
                                 "package": None,
-                                "password": "infected",
+                                "password": "",
                                 "platform": None,
                                 "preview": True,
                                 "relaname": b"deepfoo/foo/bar.txt",
@@ -107,15 +107,15 @@ def test_astree2():
                                         "children": [],
                                         "duplicate": False,
                                         "error": None,
-                                        "extrpath": [b"tar_" b"nest" b"ed2." b"tar", b"deep" b"foo/" b"foo/" b"bar." b"txt"],
+                                        "extrpath": [b"tar_nested2.tar", b"deepfoo/foo/bar.txt"],
                                         "filename": b"bar.txt",
                                         "filepath": None,
                                         "package": None,
                                         "password": None,
                                         "platform": None,
                                         "preview": True,
-                                        "relaname": b"deepfoo/" b"foo/bar." b"txt",
-                                        "relapath": b"deepfoo/" b"foo/bar." b"txt",
+                                        "relaname": b"deepfoo/foo/bar.txt",
+                                        "relapath": b"deepfoo/foo/bar.txt",
                                         "selected": False,
                                         "size": 12,
                                         "type": "file",
@@ -263,6 +263,7 @@ def test_astree3():
             },
         ],
     }
+
 
 """ This test depends if we use 7zz or 7z
 def test_astree4():
@@ -724,6 +725,7 @@ def test_astree4():
         "type": "container",
     }
 """
+
 
 def test_astree_sanitize():
     f = unpack(b"tests/files/msg_invoice.msg")

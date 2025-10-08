@@ -39,7 +39,6 @@ class Unpacker(object):
         self.f = f
         self.init()
 
-
     def init(self):
         pass
 
@@ -48,16 +47,18 @@ class Unpacker(object):
 
     def zipjail(self, filepath, dirpath, *args):
         zipjail = data_file(b"zipjail.elf")
-
+        # Consider for future make c=X as argument. If we have many children it will give one clone per child
         p = subprocess.Popen(
-            (zipjail, filepath, dirpath, "-c=3", "--", self.exe) + args,
+            (zipjail, filepath, dirpath, "-c=30", "--", self.exe) + args,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )
 
-        return_code = p.wait()
+        # https://github.com/CAPESandbox/sflock/pull/60
+        # return_code = p.wait()
         out, err = p.communicate()
+        return_code = p.returncode
 
         if b"Excessive writing caused incomplete unpacking!" in err:
             self.f.error = "files_too_large"
@@ -107,7 +108,7 @@ class Unpacker(object):
             if plugin(f).handles():
                 yield plugin.name
 
-    def unpack(self, password="infected", duplicates=None):
+    def unpack(self, password=None, duplicates=None):
         raise NotImplementedError
 
     def process(self, entries, duplicates, password=None):
@@ -161,7 +162,7 @@ class Unpacker(object):
                 if os.name == "nt":
                     # On Windows, we need O_TEMPORARY flag to open
                     # file with FILE_SHARE_DELETE share mode
-                    stream = open(filepath, "rb", opener=lambda path,flags: os.open(path, flags | os.O_TEMPORARY))
+                    stream = open(filepath, "rb", opener=lambda path, flags: os.open(path, flags | os.O_TEMPORARY))
                 else:
                     stream = open(filepath, "rb")
                 entries.append(File(relapath=filepath[len(dirpath) + 1 :], password=password, stream=stream))
@@ -228,6 +229,9 @@ class File(object):
     ):
         if isinstance(relapath, str):
             relapath = relapath.encode()
+
+        if isinstance(filepath, str):
+            filepath = filepath.encode()
 
         self.filepath = filepath
         self.relapath = relapath
@@ -324,7 +328,6 @@ class File(object):
             self._mime = magic.from_buffer(self.header, mime=True)
         """
         return self._mime or ""
-
 
     @property
     def magic_human(self):
