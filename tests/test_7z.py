@@ -75,13 +75,12 @@ class Test7zFile(object):
         assert len(t.children) == 1
         assert len(t.children[0].contents) == 801792
 
-    """
     def test_zip_encrypted(self):
         assert "7-zip archive" in f("7z_encrypted.7z").magic
         z = Zip7File(f("7z_encrypted.7z"))
         assert z.handles() is True
-        assert not t.f.selected
-        files = list(z.unpack("infected"))
+        # assert not t.f.selected
+        files = list(z.unpack(password="infected"))
         assert len(files) == 1
         assert files[0].relapath == "bar.txt"
         assert files[0].contents == "hello world\n"
@@ -89,7 +88,6 @@ class Test7zFile(object):
         assert files[0].magic == "ASCII text"
         assert files[0].parentdirs == []
         assert not files[0].selected
-    """
 
     def test_garbage(self):
         t = Zip7File(f(b"garbage.bin"))
