@@ -82,8 +82,8 @@ class Test7zFile(object):
         # assert not t.f.selected
         files = list(z.unpack(password="infected"))
         assert len(files) == 1
-        assert files[0].relapath == "bar.txt"
-        assert files[0].contents == "hello world\n"
+        assert files[0].relapath == b"bar.txt"
+        assert files[0].contents == b"hello world\n"
         assert files[0].password == "infected"
         assert files[0].magic == "ASCII text"
         assert files[0].parentdirs == []
