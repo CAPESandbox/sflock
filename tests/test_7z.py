@@ -76,7 +76,7 @@ class Test7zFile(object):
         assert len(t.children[0].contents) == 801792
 
     def test_zip_encrypted(self):
-        assert "7-zip archive" in f("7z_encrypted.7z").magic
+        assert "7-zip archive" in f(b"7z_encrypted.7z").magic
         z = Zip7File(f(b"7z_encrypted.7z"))
         assert z.handles() is True
         # assert not t.f.selected
