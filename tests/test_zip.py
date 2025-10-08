@@ -30,7 +30,7 @@ class TestZipfile(object):
         assert not files[0].filepath
         assert files[0].relapath == b"sflock.txt"
         assert files[0].contents == b"sflock_plain_zip\n"
-        assert files[0].password == "infected"
+        assert files[0].password == ""
         assert files[0].magic == "ASCII text"
         assert files[0].parentdirs == []
         assert not files[0].selected
@@ -239,7 +239,21 @@ class TestZipfile(object):
 
     def test_zip_metadata(self):
         t = unpack(b"tests/files/zip_plain.zip", filename=b"foo")
-        assert t.metadata == [{'path': 'sflock.txt', 'folder': '-', 'size': 17, 'packed_size': 17,
-                               'modified': '2015-08-10T11:47:00+00:00', 'attributes': '-rw-rw-r--', 'encrypted': '-',
-                               'crc': '028E4831', 'method': 'Store', 'characteristics': 'UT:MA:1 ux', 'host_os': 'Unix',
-                               'version': '10', 'volume_index': '0', 'offset': '0'}]
+        assert t.metadata == [
+            {
+                "path": "sflock.txt",
+                "folder": "-",
+                "size": 17,
+                "packed_size": 17,
+                "modified": "2015-08-10T11:47:00+00:00",
+                "attributes": "-rw-rw-r--",
+                "encrypted": "-",
+                "crc": "028E4831",
+                "method": "Store",
+                "characteristics": "UT:MA:1 ux",
+                "host_os": "Unix",
+                "version": "10",
+                "volume_index": "0",
+                "offset": "0",
+            }
+        ]
