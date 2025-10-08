@@ -39,7 +39,6 @@ class Unpacker(object):
         self.f = f
         self.init()
 
-
     def init(self):
         pass
 
@@ -48,9 +47,9 @@ class Unpacker(object):
 
     def zipjail(self, filepath, dirpath, *args):
         zipjail = data_file(b"zipjail.elf")
-
+        # Consider for future make c=X as argument. If we have many children it will give one clone per child
         p = subprocess.Popen(
-            (zipjail, filepath, dirpath, "-c=3", "--", self.exe) + args,
+            (zipjail, filepath, dirpath, "-c=30", "--", self.exe) + args,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -161,7 +160,7 @@ class Unpacker(object):
                 if os.name == "nt":
                     # On Windows, we need O_TEMPORARY flag to open
                     # file with FILE_SHARE_DELETE share mode
-                    stream = open(filepath, "rb", opener=lambda path,flags: os.open(path, flags | os.O_TEMPORARY))
+                    stream = open(filepath, "rb", opener=lambda path, flags: os.open(path, flags | os.O_TEMPORARY))
                 else:
                     stream = open(filepath, "rb")
                 entries.append(File(relapath=filepath[len(dirpath) + 1 :], password=password, stream=stream))
@@ -324,7 +323,6 @@ class File(object):
             self._mime = magic.from_buffer(self.header, mime=True)
         """
         return self._mime or ""
-
 
     @property
     def magic_human(self):

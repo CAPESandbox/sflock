@@ -59,6 +59,7 @@ class ZipFile(Unpacker):
     def get_metadata(self):
         return get_metadata_7z(self.f)
 
+
 class Zip7File(Unpacker):
     name = "7zfile"
     exe = zip7_binary
@@ -84,7 +85,7 @@ class Zip7File(Unpacker):
         if temporary:
             os.unlink(filepath)
 
-        return self.process_directory(dirpath, duplicates)
+        return self.process_directory(dirpath, duplicates, password=password)
 
     def get_metadata(self):
         return get_metadata_7z(self.f)
@@ -113,7 +114,7 @@ class GzipFile(Unpacker):
         if temporary:
             os.unlink(filepath)
 
-        return self.process_directory(dirpath, duplicates)
+        return self.process_directory(dirpath, duplicates, password=password)
 
 
 class LzhFile(Unpacker):
@@ -139,10 +140,11 @@ class LzhFile(Unpacker):
         if temporary:
             os.unlink(filepath)
 
-        return self.process_directory(dirpath, duplicates)
+        return self.process_directory(dirpath, duplicates, password=password)
 
     def get_metadata(self):
         return get_metadata_7z(self.f)
+
 
 class VHDFile(Unpacker):
     name = "vhdfile"
@@ -168,7 +170,7 @@ class VHDFile(Unpacker):
         if temporary:
             os.unlink(filepath)
 
-        return self.process_directory(dirpath, duplicates)
+        return self.process_directory(dirpath, duplicates, password=password)
 
     def get_metadata(self):
         return get_metadata_7z(self.f)
@@ -197,7 +199,7 @@ class WimFile(Unpacker):
         if temporary:
             os.unlink(filepath)
 
-        return self.process_directory(dirpath, duplicates)
+        return self.process_directory(dirpath, duplicates, password=password)
 
 
 class XZFile(Unpacker):
@@ -224,7 +226,7 @@ class XZFile(Unpacker):
         if temporary:
             os.unlink(filepath)
 
-        return self.process_directory(dirpath, duplicates)
+        return self.process_directory(dirpath, duplicates, password=password)
 
 
 class NSIS(Unpacker):
@@ -249,10 +251,11 @@ class NSIS(Unpacker):
         if temporary:
             os.unlink(filepath)
 
-        return self.process_directory(dirpath, duplicates)
+        return self.process_directory(dirpath, duplicates, password=password)
 
     def get_metadata(self):
         return get_metadata_7z(self.f)
+
 
 class MachoFat(Unpacker):
     name = "macho-fat"
@@ -277,5 +280,4 @@ class MachoFat(Unpacker):
         if temporary:
             os.unlink(filepath)
 
-        return self.process_directory(dirpath, duplicates)
-
+        return self.process_directory(dirpath, duplicates, password=password)
