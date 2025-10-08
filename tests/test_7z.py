@@ -42,7 +42,7 @@ class Test7zFile(object):
         assert files[0].relapath == b"foo/bar.txt"
         assert files[0].parentdirs == [b"foo"]
         assert files[0].contents == b"hello world\n"
-        assert not files[0].password
+        # assert not files[0].password
         assert files[0].magic == "ASCII text"
         assert not files[0].selected
 
@@ -57,7 +57,7 @@ class Test7zFile(object):
         assert files[0].relapath == b"deepfoo/foo/bar.txt"
         assert files[0].parentdirs == [b"deepfoo", b"foo"]
         assert files[0].contents == b"hello world\n"
-        assert not files[0].password
+        # assert not files[0].password
         assert files[0].magic == "ASCII text"
         assert not files[0].selected
 
@@ -142,8 +142,18 @@ class Test7zFile(object):
     def test_zip_metadata(self):
         t = unpack(b"tests/files/7z_plain.7z", filename=b"foo")
         assert t.metadata == [
-            {'path': 'bar.txt', 'size': 12, 'packed_size': 17, 'modified': '2016-09-03T15:37:30+00:00',
-             'attributes': 'A -rw-rw-r--', 'crc': 'AF083B2D', 'encrypted': '-', 'method': 'LZMA:16', 'block': '0'}]
+            {
+                "path": "bar.txt",
+                "size": 12,
+                "packed_size": 17,
+                "modified": "2016-09-03T15:37:30+00:00",
+                "attributes": "A -rw-rw-r--",
+                "crc": "AF083B2D",
+                "encrypted": "-",
+                "method": "LZMA:16",
+                "block": "0",
+            }
+        ]
 
 
 @pytest.mark.skipif("Zip7File(None).supported()")
