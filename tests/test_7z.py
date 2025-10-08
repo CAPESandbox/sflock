@@ -77,7 +77,7 @@ class Test7zFile(object):
 
     def test_zip_encrypted(self):
         assert "7-zip archive" in f("7z_encrypted.7z").magic
-        z = Zip7File(f("7z_encrypted.7z"))
+        z = Zip7File(f(b"7z_encrypted.7z"))
         assert z.handles() is True
         # assert not t.f.selected
         files = list(z.unpack(password="infected"))
