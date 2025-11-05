@@ -264,7 +264,7 @@ class File(object):
         self._ole_tried = False
         self._header = None
 
-        # all filenames
+        # Filenames of all child entries if this is an archive.
         self.filenames = []
 
     @classmethod
