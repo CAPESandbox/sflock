@@ -139,6 +139,7 @@ class Unpacker(object):
 
             f.parent = self.f
             ret.append(f)
+            self.filenames.append(f.filename)
         return ret
 
     @staticmethod
@@ -262,6 +263,9 @@ class File(object):
         self._ole = None
         self._ole_tried = False
         self._header = None
+
+        # all filenames
+        self.filenames = []
 
     @classmethod
     def from_path(self, filepath, relapath=None, filename=None, password=None):
