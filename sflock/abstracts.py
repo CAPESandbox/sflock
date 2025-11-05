@@ -139,7 +139,8 @@ class Unpacker(object):
 
             f.parent = self.f
             ret.append(f)
-            self.filenames.append(f.filename)
+            if self.f:
+                self.f.filenames.append(f.filename)
         return ret
 
     @staticmethod
