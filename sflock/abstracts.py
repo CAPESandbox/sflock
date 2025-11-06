@@ -139,6 +139,11 @@ class Unpacker(object):
 
             f.parent = self.f
             ret.append(f)
+            if self.f:
+                try:
+                    self.f.filenames.append(f.filename.decod("latin-1"))
+                except Exception as e:
+                    print("Can't append name to filenames: %s", str(e))
         return ret
 
     @staticmethod
@@ -262,6 +267,9 @@ class File(object):
         self._ole = None
         self._ole_tried = False
         self._header = None
+
+        # Filenames of all child entries if this is an archive.
+        self.filenames = []
 
     @classmethod
     def from_path(self, filepath, relapath=None, filename=None, password=None):
