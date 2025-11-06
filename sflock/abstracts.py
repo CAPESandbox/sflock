@@ -141,7 +141,7 @@ class Unpacker(object):
             ret.append(f)
             if self.f:
                 try:
-                    self.f.filenames.append(f.filename.decod("latin-1"))
+                    self.f.filenames.append(f.filename.decode("latin-1"))
                 except Exception as e:
                     print("Can't append name to filenames: %s", str(e))
         return ret
