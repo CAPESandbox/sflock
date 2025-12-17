@@ -455,6 +455,74 @@ def powershell(f):
     if found > 1:
         return "ps1"
 
+nodejs_patterns = {
+    "Explicit Directives (Highest Confidence)": [
+        # Catches #!/usr/bin/env node
+        rb"^#!.*\bnode\b",
+        # Catches import ... from 'node:fs'
+        rb"['\"]node:[a-zA-Z\/]+['\"]"
+    ],
+
+    "Core Globals": [
+        # Robust process detection
+        rb"\bprocess\.(env|argv|cwd|exit|platform|versions|nextTick)\b",
+        rb"\bglobal\.(?!\.)",
+        # Legacy Buffer usage
+        rb"\bBuffer\.(from|alloc|allocUnsafe|concat)\b",
+        rb"\b__dirname\b",
+        rb"\b__filename\b"
+    ],
+
+    "System Execution (Critical)": [
+        # Catches require('child_process') OR from 'child_process'
+        rb"(?:require\s*\(|from\s+)['\"]child_process['\"]",
+        rb"\bspawn\(",
+        rb"\bexec\(",
+        rb"\bexecSync\(",
+        rb"\bfork\("
+    ],
+
+    "File System Access": [
+        # Catches require('fs'), require('fs/promises'), from 'fs', etc.
+        rb"(?:require\s*\(|from\s+)['\"](fs|fs\/promises|path)['\"]",
+        rb"\bfs\.readFile",
+        rb"\bfs\.writeFile",
+        rb"\bfs\.promises\."
+    ],
+
+    "Networking & OS": [
+        # Catches require('net'), require('os'), require('dgram'), etc.
+        rb"(?:require\s*\(|from\s+)['\"](net|os|dgram|dns|tls|http|https)['\"]",
+        rb"\bnet\.createServer",
+        rb"\bnet\.connect",
+        rb"\bos\.cpus",
+        rb"\bos\.userInfo",
+        rb"\bos\.networkInterfaces"
+    ],
+
+    "Module System": [
+        # CommonJS exports (Node specific vs Browser ES modules)
+        rb"\bmodule\.exports\b",
+        rb"\bexports\.\w+\s*="
+    ]
+}
+nodejs_compiled_patterns = {}
+for category, patterns in combined_patterns_bytes.items():
+    nodejs_compiled_patterns[category] = [re.compile(p) for p in patterns]
+
+def nodejs(f):
+    count = 0
+    for category, pattern_list in compiled_patterns.items():
+        for pattern in pattern_list:
+            if pattern.search(content):
+                count += 1
+                        
+    except Exception as e:
+        print(f"Error reading {filepath}: {e}")
+        
+    if count >= 3:
+        return "nodejs"
+    
 
 def javascript(f):
     JS_STRS = [
@@ -660,6 +728,7 @@ identifiers = [
     office_activemime,
     hta,
     powershell,
+    nodejs,
     javascript,
     visualbasic,
     android,
