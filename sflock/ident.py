@@ -512,17 +512,16 @@ for category, patterns in combined_patterns_bytes.items():
 
 def nodejs(f):
     count = 0
-    for category, pattern_list in compiled_patterns.items():
+    if not f.contents:
+        return
+
+    for category, pattern_list in nodejs_compiled_patterns.items():
         for pattern in pattern_list:
-            if pattern.search(content):
+            if pattern.search(f.contents):
                 count += 1
-                        
-    except Exception as e:
-        print(f"Error reading {filepath}: {e}")
-        
+
     if count >= 3:
         return "nodejs"
-    
 
 def javascript(f):
     JS_STRS = [
