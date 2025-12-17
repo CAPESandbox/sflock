@@ -507,7 +507,7 @@ nodejs_patterns = {
     ]
 }
 nodejs_compiled_patterns = {}
-for category, patterns in combined_patterns_bytes.items():
+for category, patterns in nodejs_patterns.items():
     nodejs_compiled_patterns[category] = [re.compile(p) for p in patterns]
 
 def nodejs(f):
