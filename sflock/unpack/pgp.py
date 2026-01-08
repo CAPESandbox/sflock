@@ -17,6 +17,13 @@ class PGP(Unpacker):
     exts = b".pgp", b".gpg"
     magic = "PGP "
 
+    TAG_SESSION_KEY = 1
+    TAG_SIGNATURE = 2
+    TAG_SECRET_KEY = 5
+    TAG_PUBLIC_KEY = 6
+    TAG_PUBLIC_SUBKEY = 14
+    TAG_ENCRYPTED_DATA = 18
+
     def unpack(self, password: str = None, duplicates=None):
         dirpath = tempfile.mkdtemp()
 
@@ -56,13 +63,13 @@ class PGP(Unpacker):
             if temporary and os.path.exists(filepath):
                 os.unlink(filepath)
 
-            if os.path.exists(dirpath):
-                shutil.rmtree(dirpath)
-
-
         ret = not return_code
         if not ret:
+            if os.path.exists(dirpath):
+                shutil.rmtree(dirpath)
             return []
+
+        return self.process_directory(dirpath, duplicates, password)
 
     def get_metadata(self):
         ret = []
@@ -86,11 +93,13 @@ class PGP(Unpacker):
             else:  # Old format
                 tag_type = (tag >> 2) & 0xF
 
-            if tag_type in (6, 14):
+            if tag_type in (self.TAG_PUBLIC_KEY, self.TAG_PUBLIC_SUBKEY):
                 ret.append("public_key")
-            elif tag_type == 5:
+            elif tag_type == self.TAG_SECRET_KEY:
                 ret.append("private_key")
-            elif tag_type in (1, 18):
+            elif tag_type == self.TAG_SIGNATURE:
+                ret.append("signature")
+            elif tag_type in (self.TAG_SESSION_KEY, self.TAG_ENCRYPTED_DATA):
                 ret.append("encrypted_message")
 
         return ret
