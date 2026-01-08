@@ -28,15 +28,30 @@ class PGP(Unpacker):
         # ToDo
         # locked system call occurred during sandboxing!\nip=0x7f9d2bc0fa97 sp=0x7ffdcb8d5eb8 abi=0 nr=102 syscall=getuid
         # ret = self.zipjail(filepath, dirpath, "-o", os.path.join(dirpath, "extracted"), "--passphrase=%s" % (password or ""), filepath)
-        p = subprocess.Popen(
-            (self.exe, "--decrypt", "--batch", "-o", os.path.join(dirpath, "extracted"), "--passphrase=%s" % (password or ""), filepath),
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
+        p = None
+        try:
+            p = subprocess.Popen(
+                (self.exe, "--decrypt", "--batch", "-o", os.path.join(dirpath, "extracted"),
+                 "--passphrase=%s" % (password or ""), filepath),
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
 
-        return_code = p.wait()
-        _, _ = p.communicate()
+            stdout, stderr = p.communicate(timeout=30)
+            return_code = p.returncode
+
+        except subprocess.TimeoutExpired:
+            if p:
+                p.kill()
+                _, _ = p.communicate()
+            return_code = 1
+        except Exception:
+            if p:
+                p.kill()
+                p.wait()
+            return_code = 1
+
         ret = not return_code
         if not ret:
             return []
