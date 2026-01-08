@@ -1,4 +1,5 @@
 import unittest
+import os
 from sflock.unpack.pgp import PGP
 from sflock.abstracts import File
 
@@ -29,6 +30,25 @@ class TestPGPMetadata(unittest.TestCase):
                 f = File(contents=contents)
                 p = PGP(f)
                 self.assertEqual(p.get_metadata(), expected)
+
+    def test_dummy_encrypted_handles(self):
+        filepath = os.path.join("tests", "files", "dummy_encrypted.gpg")
+        if not os.path.exists(filepath):
+            # Create the dummy file if it doesn't exist (useful if running independently)
+            with open(filepath, 'wb') as f:
+                 f.write(b'\xD2\x05\x00\x00\x00\x00\x00')
+
+        with open(filepath, "rb") as f:
+            content = f.read()
+        
+        f = File(filepath=filepath, contents=content)
+        p = PGP(f)
+        
+        # Verify metadata extraction
+        self.assertIn("encrypted_message", p.get_metadata())
+        
+        # Verify handles() returns True because "encrypted_message" is present
+        self.assertTrue(p.handles())
 
 if __name__ == '__main__':
     unittest.main()
