@@ -4,6 +4,7 @@
 # See the file 'docs/LICENSE.txt' for copying permission.
 
 import os
+import shutil
 import subprocess
 import tempfile
 
@@ -15,6 +16,23 @@ class PGP(Unpacker):
     exe = "/usr/bin/gpg"
     exts = b".pgp", b".gpg"
     magic = "PGP "
+
+    TAG_SESSION_KEY = 1
+    TAG_SIGNATURE = 2
+    TAG_SECRET_KEY = 5
+    TAG_PUBLIC_KEY = 6
+    TAG_PUBLIC_SUBKEY = 14
+    TAG_ENCRYPTED_DATA = 18
+
+    META_PUBLIC_KEY = "public_key"
+    META_PRIVATE_KEY = "private_key"
+    META_ENCRYPTED_MESSAGE = "encrypted_message"
+    META_SIGNATURE = "signature"
+
+    def handles(self):
+        if not super(PGP, self).handles():
+            return False
+        return "encrypted_message" in self.get_metadata()
 
     def unpack(self, password: str = None, duplicates=None):
         dirpath = tempfile.mkdtemp()
@@ -38,7 +56,7 @@ class PGP(Unpacker):
                 stderr=subprocess.PIPE,
             )
 
-            stdout, stderr = p.communicate(timeout=30)
+            _, _ = p.communicate(timeout=30)
             return_code = p.returncode
 
         except subprocess.TimeoutExpired:
@@ -51,12 +69,47 @@ class PGP(Unpacker):
                 p.kill()
                 p.wait()
             return_code = 1
+        finally:
+            if temporary and os.path.exists(filepath):
+                os.unlink(filepath)
 
         ret = not return_code
         if not ret:
+            if os.path.exists(dirpath):
+                shutil.rmtree(dirpath)
             return []
 
-        if temporary:
-            os.unlink(filepath)
-
         return self.process_directory(dirpath, duplicates, password)
+
+    def get_metadata(self):
+        ret = []
+        content = self.f.contents
+        if not content:
+            return ret
+
+        if b"BEGIN PGP PUBLIC KEY BLOCK" in content:
+            ret.append("public_key")
+        elif b"BEGIN PGP PRIVATE KEY BLOCK" in content:
+            ret.append("private_key")
+        elif b"BEGIN PGP MESSAGE" in content:
+            ret.append("encrypted_message")
+        elif b"BEGIN PGP SIGNATURE" in content:
+            ret.append("signature")
+        elif content[0] & 0x80:
+            # Binary analysis
+            tag = content[0]
+            if tag & 0x40:  # New format
+                tag_type = tag & 0x3F
+            else:  # Old format
+                tag_type = (tag >> 2) & 0xF
+
+            if tag_type in (self.TAG_PUBLIC_KEY, self.TAG_PUBLIC_SUBKEY):
+                ret.append(self.META_PUBLIC_KEY)
+            elif tag_type == self.TAG_SECRET_KEY:
+                ret.append(self.META_PRIVATE_KEY)
+            elif tag_type == self.TAG_SIGNATURE:
+                ret.append(self.META_SIGNATURE)
+            elif tag_type in (self.TAG_SESSION_KEY, self.TAG_ENCRYPTED_DATA):
+                ret.append(self.META_ENCRYPTED_MESSAGE)
+
+        return ret
