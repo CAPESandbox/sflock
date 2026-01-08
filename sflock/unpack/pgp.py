@@ -29,6 +29,11 @@ class PGP(Unpacker):
     META_ENCRYPTED_MESSAGE = "encrypted_message"
     META_SIGNATURE = "signature"
 
+    def handles(self):
+        if not super(PGP, self).handles():
+            return False
+        return "encrypted_message" in self.get_metadata()
+
     def unpack(self, password: str = None, duplicates=None):
         dirpath = tempfile.mkdtemp()
 
