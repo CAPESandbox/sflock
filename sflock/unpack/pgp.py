@@ -24,6 +24,11 @@ class PGP(Unpacker):
     TAG_PUBLIC_SUBKEY = 14
     TAG_ENCRYPTED_DATA = 18
 
+    META_PUBLIC_KEY = "public_key"
+    META_PRIVATE_KEY = "private_key"
+    META_ENCRYPTED_MESSAGE = "encrypted_message"
+    META_SIGNATURE = "signature"
+
     def unpack(self, password: str = None, duplicates=None):
         dirpath = tempfile.mkdtemp()
 
@@ -94,12 +99,12 @@ class PGP(Unpacker):
                 tag_type = (tag >> 2) & 0xF
 
             if tag_type in (self.TAG_PUBLIC_KEY, self.TAG_PUBLIC_SUBKEY):
-                ret.append("public_key")
+                ret.append(self.META_PUBLIC_KEY)
             elif tag_type == self.TAG_SECRET_KEY:
-                ret.append("private_key")
+                ret.append(self.META_PRIVATE_KEY)
             elif tag_type == self.TAG_SIGNATURE:
-                ret.append("signature")
+                ret.append(self.META_SIGNATURE)
             elif tag_type in (self.TAG_SESSION_KEY, self.TAG_ENCRYPTED_DATA):
-                ret.append("encrypted_message")
+                ret.append(self.META_ENCRYPTED_MESSAGE)
 
         return ret
