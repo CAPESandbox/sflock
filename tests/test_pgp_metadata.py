@@ -28,7 +28,7 @@ class TestPGPMetadata(unittest.TestCase):
         # Old format: 10xxxxxx
         # Tag is bits 5-2.
         # 0x80 | (6 << 2) = 0x80 | 0x18 = 0x98.
-        f = File(contents=b"\x98\x01") 
+        f = File(contents=b"\x98\x01")
         p = PGP(f)
         self.assertEqual(p.get_metadata(), ["public_key"])
 
