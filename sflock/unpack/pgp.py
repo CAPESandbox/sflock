@@ -4,6 +4,7 @@
 # See the file 'docs/LICENSE.txt' for copying permission.
 
 import os
+import shutil
 import subprocess
 import tempfile
 
@@ -38,7 +39,7 @@ class PGP(Unpacker):
                 stderr=subprocess.PIPE,
             )
 
-            stdout, stderr = p.communicate(timeout=30)
+            _, _ = p.communicate(timeout=30)
             return_code = p.returncode
 
         except subprocess.TimeoutExpired:
@@ -51,12 +52,45 @@ class PGP(Unpacker):
                 p.kill()
                 p.wait()
             return_code = 1
+        finally:
+            if temporary and os.path.exists(filepath):
+                os.unlink(filepath)
+
+            if os.path.exists(dirpath):
+                shutil.rmtree(dirpath)
+
 
         ret = not return_code
         if not ret:
             return []
 
-        if temporary:
-            os.unlink(filepath)
+    def get_metadata(self):
+        ret = []
+        content = self.f.contents
+        if not content:
+            return ret
 
-        return self.process_directory(dirpath, duplicates, password)
+        if b"BEGIN PGP PUBLIC KEY BLOCK" in content:
+            ret.append("public_key")
+        elif b"BEGIN PGP PRIVATE KEY BLOCK" in content:
+            ret.append("private_key")
+        elif b"BEGIN PGP MESSAGE" in content:
+            ret.append("encrypted_message")
+        elif b"BEGIN PGP SIGNATURE" in content:
+            ret.append("signature")
+        elif content[0] & 0x80:
+            # Binary analysis
+            tag = content[0]
+            if tag & 0x40:  # New format
+                tag_type = tag & 0x3F
+            else:  # Old format
+                tag_type = (tag >> 2) & 0xF
+
+            if tag_type in (6, 14):
+                ret.append("public_key")
+            elif tag_type == 5:
+                ret.append("private_key")
+            elif tag_type in (1, 18):
+                ret.append("encrypted_message")
+
+        return ret
