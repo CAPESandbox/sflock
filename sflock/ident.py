@@ -523,6 +523,32 @@ def nodejs(f):
     if count >= 3:
         return "nodejs"
 
+autoit_patterns = {
+    # Word boundaries matter: "EndFunc"/"SetError" etc. are substrings of
+    # unrelated identifiers like "appendFunction"/"resetError".
+    "Func Block Syntax": rb"\bEndFunc\b",
+    "AutoIt-only Builtins": (
+        rb"\b(?:DllStruct(?:Create|SetData|GetData)|FileInstall|"
+        rb"AdlibRegister|HotKeySet|StringToBinary|BinaryToString|SetError)\b"
+    ),
+    "Macro Syntax": (
+        rb"@(?:(?:Temp|Script|Windows|System|AppData|ProgramFiles)Dir|Comspec|OSVersion)\b"
+    ),
+}
+autoit_compiled_patterns = {category: re.compile(pattern, re.I) for category, pattern in autoit_patterns.items()}
+
+
+def autoit(f):
+    """Detect decompiled/plaintext AutoIt v3 source regardless of extension."""
+    if not f.contents:
+        return
+
+    hits = sum(1 for pattern in autoit_compiled_patterns.values() if pattern.search(f.contents))
+
+    if hits >= 2:
+        return "autoit"
+
+
 def javascript(f):
     JS_STRS = [
         b"var ",
@@ -726,6 +752,7 @@ identifiers = [
     office_webarchive,
     office_activemime,
     hta,
+    autoit,
     powershell,
     nodejs,
     javascript,
