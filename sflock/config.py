@@ -7,6 +7,11 @@
 # May be tweaked in the future including modifying this at runtime.
 MAX_TOTAL_SIZE = 1024 * 1024 * 1024
 
+# Content-scanning identifiers only inspect the head of a file. File-type
+# identification does not need the whole buffer, and unbounded scans over very
+# large files took minutes.
+MAX_IDENT_SCAN_SIZE = 16 * 1024 * 1024
+
 
 def iter_passwords():
     from importlib.resources import as_file, files

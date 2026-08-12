@@ -14,7 +14,7 @@ import shutil
 import subprocess
 import tempfile
 
-from sflock.config import iter_passwords
+from sflock.config import MAX_IDENT_SCAN_SIZE, iter_passwords
 from sflock.exception import UnpackException
 from sflock.misc import data_file, make_list
 from sflock.pick import package, platform
@@ -264,6 +264,7 @@ class File(object):
         self._ole = None
         self._ole_tried = False
         self._header = None
+        self._scan_buffer = None
 
         # Filepaths of all child entries if this is an archive.
         self.filepaths = []
@@ -313,6 +314,21 @@ class File(object):
         if not self._header and self.filesize:
             self._header = self.stream.read(1024 * 1024)
         return self._header or b""
+
+    @property
+    def scan_buffer(self):
+        """Head of the file, for content-sniffing identifiers. Bounded so
+        that identification stays cheap on very large files."""
+        if self._scan_buffer is None:
+            if self._contents is not None:
+                self._scan_buffer = self._contents[:MAX_IDENT_SCAN_SIZE]
+            elif self._stream is not None:
+                self._stream.seek(0)
+                self._scan_buffer = self._stream.read(MAX_IDENT_SCAN_SIZE)
+            elif self.filepath:
+                with open(self.filepath, "rb") as fh:
+                    self._scan_buffer = fh.read(MAX_IDENT_SCAN_SIZE)
+        return self._scan_buffer or b""
 
     @property
     def magic(self):
