@@ -209,7 +209,7 @@ magics = OrderedDict(
 
 
 def is_executable(f):
-    return f.contents.startswith((b"MZ", b"\x7fELF"))
+    return f.header.startswith((b"MZ", b"\x7fELF"))
 
 
 def have_enough_memory_for_unicorn():
@@ -672,7 +672,7 @@ def identify(f, check_shellcode: bool = False):
 
     if f.filename:
         for package, extensions in file_extensions.items():
-            if f.filename.endswith(extensions) and not f.contents.startswith(b"MZ"):
+            if f.filename.endswith(extensions) and not f.header.startswith(b"MZ"):
                 return package
 
     for identifier in identifiers_special:
