@@ -50,7 +50,10 @@ class BupFile(Unpacker):
                 continue
 
             relapath = ntpath.basename(config.get(filename[0], "OriginalName"))
-            relapath = relapath.encode()
+            try:
+                relapath = relapath.encode("utf-8", "surrogateescape")
+            except UnicodeEncodeError:
+                relapath = relapath.encode("utf-8", "replace")
 
             entries.append(File(relapath=relapath, contents=self.decrypt(bytearray(ole.openstream(filename[0]).read()))))
 

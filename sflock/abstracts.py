@@ -230,10 +230,16 @@ class File(object):
         platform=None,
     ):
         if isinstance(relapath, str):
-            relapath = relapath.encode()
+            try:
+                relapath = relapath.encode("utf-8", "surrogateescape")
+            except UnicodeEncodeError:
+                relapath = relapath.encode("utf-8", "replace")
 
         if isinstance(filepath, str):
-            filepath = filepath.encode()
+            try:
+                filepath = filepath.encode("utf-8", "surrogateescape")
+            except UnicodeEncodeError:
+                filepath = filepath.encode("utf-8", "replace")
 
         self.filepath = filepath
         self.relapath = relapath

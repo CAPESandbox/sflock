@@ -67,7 +67,10 @@ class PdfFile(Unpacker):
 
                 if sys.version_info.major == 3:
                     contents = contents.encode("latin-1")
-                    filename = filename.encode()
+                    try:
+                        filename = filename.encode("utf-8", "surrogateescape")
+                    except UnicodeEncodeError:
+                        filename = filename.encode("utf-8", "replace")
 
                 entries.append(File(
                     contents=contents,

@@ -43,7 +43,10 @@ class TarFile(Unpacker):
                 self.f.error = "files_too_large"
                 return []
 
-            relapath = entry.path.encode()
+            try:
+                relapath = entry.path.encode("utf-8", "surrogateescape")
+            except UnicodeEncodeError:
+                relapath = entry.path.encode("utf-8", "replace")
             entries.append(File(relapath=relapath, contents=archive.extractfile(entry).read()))
 
         return self.process(entries, duplicates)

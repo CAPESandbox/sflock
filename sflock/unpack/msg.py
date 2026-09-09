@@ -54,7 +54,10 @@ class MsgFile(Unpacker):
             if dirname[0].startswith("__attach") and dirname[0] not in seen:
                 filename, contents = self.get_attachment(dirname[0])
                 if isinstance(filename, str):
-                    filename = filename.encode()
+                    try:
+                        filename = filename.encode("utf-8", "surrogateescape")
+                    except UnicodeEncodeError:
+                        filename = filename.encode("utf-8", "replace")
                 entries.append(File(relapath=filename, contents=contents))
                 seen.append(dirname[0])
 
