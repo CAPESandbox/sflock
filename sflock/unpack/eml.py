@@ -53,7 +53,11 @@ class EmlFile(Unpacker):
             filename = part.get_filename()
             if filename:
                 filename = email.header.make_header(email.header.decode_header(filename))
-                filename = str(filename).encode()
+                filename_str = str(filename)
+                try:
+                    filename = filename_str.encode("utf-8", "surrogateescape")
+                except UnicodeEncodeError:
+                    filename = filename_str.encode("utf-8", "replace")
             entries.append(File(relapath=filename or b"att1", contents=payload))
 
         return entries
