@@ -209,7 +209,7 @@ magics = OrderedDict(
 
 
 def is_executable(f):
-    return f.contents.startswith((b"MZ", b"\x7fELF"))
+    return f.header.startswith((b"MZ", b"\x7fELF"))
 
 
 def have_enough_memory_for_unicorn():
@@ -455,73 +455,84 @@ def powershell(f):
     if found > 1:
         return "ps1"
 
+# Each pattern is paired with the literal substring(s) that must be present
+# for it to have any chance of matching. Most of these patterns are \b-anchored,
+# which defeats re's literal-prefix optimization and makes them scan at ~60
+# MB/s instead of the ~3500 MB/s of a plain substring search; gating on the
+# (much cheaper) literal first avoids running the regex at all on the
+# overwhelming majority of non-matching content.
 nodejs_patterns = {
     "Explicit Directives (Highest Confidence)": [
         # Catches #!/usr/bin/env node
-        rb"^#!.*\bnode\b",
+        ((b"node",), rb"^#!.*\bnode\b"),
         # Catches import ... from 'node:fs'
-        rb"['\"]node:[a-zA-Z\/]+['\"]"
+        ((b"node:",), rb"['\"]node:[a-zA-Z\/]+['\"]"),
     ],
 
     "Core Globals": [
         # Robust process detection
-        rb"\bprocess\.(env|argv|cwd|exit|platform|versions|nextTick)\b",
-        rb"\bglobal\.(?!\.)",
+        ((b"process.",), rb"\bprocess\.(env|argv|cwd|exit|platform|versions|nextTick)\b"),
+        ((b"global.",), rb"\bglobal\.(?!\.)"),
         # Legacy Buffer usage
-        rb"\bBuffer\.(from|alloc|allocUnsafe|concat)\b",
-        rb"\b__dirname\b",
-        rb"\b__filename\b"
+        ((b"Buffer.",), rb"\bBuffer\.(from|alloc|allocUnsafe|concat)\b"),
+        ((b"__dirname",), rb"\b__dirname\b"),
+        ((b"__filename",), rb"\b__filename\b"),
     ],
 
     "System Execution (Critical)": [
         # Catches require('child_process') OR from 'child_process'
-        rb"(?:require\s*\(|from\s+)['\"]child_process['\"]",
-        rb"\bspawn\(",
-        rb"\bexec\(",
-        rb"\bexecSync\(",
-        rb"\bfork\("
+        ((b"child_process",), rb"(?:require\s*\(|from\s+)['\"]child_process['\"]"),
+        ((b"spawn(",), rb"\bspawn\("),
+        ((b"exec(",), rb"\bexec\("),
+        ((b"execSync(",), rb"\bexecSync\("),
+        ((b"fork(",), rb"\bfork\("),
     ],
 
     "File System Access": [
         # Catches require('fs'), require('fs/promises'), from 'fs', etc.
-        rb"(?:require\s*\(|from\s+)['\"](fs|fs\/promises|path)['\"]",
-        rb"\bfs\.readFile",
-        rb"\bfs\.writeFile",
-        rb"\bfs\.promises\."
+        ((b"'fs", b'"fs', b"'path", b'"path'), rb"(?:require\s*\(|from\s+)['\"](fs|fs\/promises|path)['\"]"),
+        ((b"fs.readFile",), rb"\bfs\.readFile"),
+        ((b"fs.writeFile",), rb"\bfs\.writeFile"),
+        ((b"fs.promises.",), rb"\bfs\.promises\."),
     ],
 
     "Networking & OS": [
         # Catches require('net'), require('os'), require('dgram'), etc.
-        rb"(?:require\s*\(|from\s+)['\"](net|os|dgram|dns|tls|http|https)['\"]",
-        rb"\bnet\.createServer",
-        rb"\bnet\.connect",
-        rb"\bos\.cpus",
-        rb"\bos\.userInfo",
-        rb"\bos\.networkInterfaces"
+        (
+            (b"'net", b'"net', b"'os", b'"os', b"'dgram", b'"dgram', b"'dns", b'"dns', b"'tls", b'"tls', b"'http", b'"http'),
+            rb"(?:require\s*\(|from\s+)['\"](net|os|dgram|dns|tls|http|https)['\"]",
+        ),
+        ((b"net.createServer",), rb"\bnet\.createServer"),
+        ((b"net.connect",), rb"\bnet\.connect"),
+        ((b"os.cpus",), rb"\bos\.cpus"),
+        ((b"os.userInfo",), rb"\bos\.userInfo"),
+        ((b"os.networkInterfaces",), rb"\bos\.networkInterfaces"),
     ],
 
     "Module System": [
         # CommonJS exports (Node specific vs Browser ES modules)
-        rb"\bmodule\.exports\b",
-        rb"\bexports\.\w+\s*="
-    ]
+        ((b"module.exports",), rb"\bmodule\.exports\b"),
+        ((b"exports.",), rb"\bexports\.\w+\s*="),
+    ],
 }
 nodejs_compiled_patterns = {}
 for category, patterns in nodejs_patterns.items():
-    nodejs_compiled_patterns[category] = [re.compile(p) for p in patterns]
+    nodejs_compiled_patterns[category] = [(literals, re.compile(p)) for literals, p in patterns]
 
 def nodejs(f):
-    count = 0
-    if not f.contents:
+    buf = f.scan_buffer
+    if not buf:
         return
 
-    for category, pattern_list in nodejs_compiled_patterns.items():
-        for pattern in pattern_list:
-            if pattern.search(f.contents):
+    count = 0
+    for pattern_list in nodejs_compiled_patterns.values():
+        for literals, pattern in pattern_list:
+            if not any(literal in buf for literal in literals):
+                continue
+            if pattern.search(buf):
                 count += 1
-
-    if count >= 3:
-        return "nodejs"
+                if count >= 3:
+                    return "nodejs"
 
 def javascript(f):
     JS_STRS = [
@@ -672,7 +683,7 @@ def identify(f, check_shellcode: bool = False):
 
     if f.filename:
         for package, extensions in file_extensions.items():
-            if f.filename.endswith(extensions) and not f.contents.startswith(b"MZ"):
+            if f.filename.endswith(extensions) and not f.header.startswith(b"MZ"):
                 return package
 
     for identifier in identifiers_special:
