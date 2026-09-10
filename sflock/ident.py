@@ -534,6 +534,38 @@ def nodejs(f):
                 if count >= 3:
                     return "nodejs"
 
+autoit_patterns = {
+    # Word boundaries matter: "EndFunc"/"SetError" etc. are substrings of
+    # unrelated identifiers like "appendFunction"/"resetError".
+    "Func Block Syntax": rb"\bEndFunc\b",
+    "AutoIt-only Builtins": (
+        rb"\b(?:DllStruct(?:Create|SetData|GetData)|FileInstall|"
+        rb"AdlibRegister|HotKeySet|StringToBinary|BinaryToString|SetError)\b"
+    ),
+    "Macro Syntax": (
+        rb"@(?:(?:Temp|Script|Windows|System|AppData|ProgramFiles)Dir|Comspec|OSVersion)\b"
+    ),
+}
+autoit_compiled_patterns = {category: re.compile(pattern, re.I) for category, pattern in autoit_patterns.items()}
+
+
+def autoit(f):
+    """Detect decompiled/plaintext AutoIt v3 source regardless of extension."""
+    if not f.contents:
+        return
+
+    # Limit both checks to the first 2MB. This safely covers large PE stubs (which contain the AU3!EA06 overlay) 
+    # and heavily padded raw scripts, while preventing CPU exhaustion on huge files.
+    content_slice = f.contents[:2097152]
+    if content_slice.startswith(b"AU3!EA06") or (content_slice.startswith(b"MZ") and b"AU3!EA06" in content_slice):
+        return "autoit"
+
+    hits = sum(1 for pattern in autoit_compiled_patterns.values() if pattern.search(content_slice))
+
+    if hits >= 2:
+        return "autoit"
+
+
 def javascript(f):
     JS_STRS = [
         b"var ",
@@ -737,6 +769,7 @@ identifiers = [
     office_webarchive,
     office_activemime,
     hta,
+    autoit,
     powershell,
     nodejs,
     javascript,
