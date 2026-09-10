@@ -543,17 +543,13 @@ def autoit(f):
     if not f.contents:
         return
 
-    # Check for compiled AutoIt script signature (AU3!EA06)
-    # It can be at the start (.a3x files), or embedded in a PE executable.
-    # Limit search to the first 1MB to avoid scanning massive pumped binaries.
-    magic_slice = f.contents[:1048576]
-    if magic_slice.startswith(b"AU3!EA06") or (magic_slice.startswith(b"MZ") and b"AU3!EA06" in magic_slice):
+    # Limit both checks to the first 2MB. This safely covers large PE stubs (which contain the AU3!EA06 overlay) 
+    # and heavily padded raw scripts, while preventing CPU exhaustion on huge files.
+    content_slice = f.contents[:2097152]
+    if content_slice.startswith(b"AU3!EA06") or (content_slice.startswith(b"MZ") and b"AU3!EA06" in content_slice):
         return "autoit"
 
-    # Avoid running heavy regexes on multi-megabyte binaries.
-    # Legitimate raw AutoIt scripts will have these keywords within the first 128KB.
-    script_snippet = f.contents[:131072]
-    hits = sum(1 for pattern in autoit_compiled_patterns.values() if pattern.search(script_snippet))
+    hits = sum(1 for pattern in autoit_compiled_patterns.values() if pattern.search(content_slice))
 
     if hits >= 2:
         return "autoit"
