@@ -88,13 +88,13 @@ class PGP(Unpacker):
             return ret
 
         if b"BEGIN PGP PUBLIC KEY BLOCK" in content:
-            ret.append("public_key")
+            ret.append(self.META_PUBLIC_KEY)
         elif b"BEGIN PGP PRIVATE KEY BLOCK" in content:
-            ret.append("private_key")
+            ret.append(self.META_PRIVATE_KEY)
         elif b"BEGIN PGP MESSAGE" in content:
-            ret.append("encrypted_message")
+            ret.append(self.META_ENCRYPTED_MESSAGE)
         elif b"BEGIN PGP SIGNATURE" in content:
-            ret.append("signature")
+            ret.append(self.META_SIGNATURE)
         elif content[0] & 0x80:
             # Binary analysis
             tag = content[0]
