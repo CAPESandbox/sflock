@@ -758,7 +758,7 @@ six = ">=1.5"
 name = "python-magic"
 version = "0.4.27"
 description = "File type identification using libmagic"
-optional = true
+optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 groups = ["main"]
 markers = "sys_platform == \"linux\" and extra == \"linux\""
@@ -771,7 +771,7 @@ files = [
 name = "python-magic-bin"
 version = "0.4.14"
 description = "File type identification using libmagic binary package"
-optional = true
+optional = false
 python-versions = "*"
 groups = ["main"]
 markers = "sys_platform == \"win32\" and extra == \"windows\""
@@ -1019,4 +1019,4 @@ windows = ["python-magic-bin"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10, <4.0"
-content-hash = "92637826e64c7a7f35b0c6cfe9104799c2b613d50203451ff3b9ab1792204eea"
+content-hash = "1e1dcf5f42d75c4a0923851810ddc7c90d7290de106cffab243498ef65c826aa"

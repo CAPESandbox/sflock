@@ -520,6 +520,10 @@ for category, patterns in nodejs_patterns.items():
     nodejs_compiled_patterns[category] = [(literals, re.compile(p)) for literals, p in patterns]
 
 def nodejs(f):
+    analysis = javascript_runtime_analyze(f)
+    if analysis and analysis.get("target_environment") == "NodeJS" and analysis.get("confidence") in ("High", "Moderate"):
+        return "nodejs"
+
     buf = f.scan_buffer
     if not buf:
         return
@@ -533,6 +537,143 @@ def nodejs(f):
                 count += 1
                 if count >= 3:
                     return "nodejs"
+
+
+browser_patterns = {
+    "DOM": [
+        ((b"window",), rb"window"),
+        ((b"document",), rb"document"),
+        ((b"navigator",), rb"navigator"),
+        ((b"screen",), rb"screen"),
+        ((b"location.",), rb"location\.(?:href|hostname|search)"),
+    ],
+    "APIs": [
+        ((b"XMLHttpRequest",), rb"XMLHttpRequest"),
+        ((b"fetch",), rb"fetch"),
+        ((b"localStorage",), rb"localStorage"),
+        ((b"sessionStorage",), rb"sessionStorage"),
+        ((b"AudioContext",), rb"AudioContext"),
+        ((b"webkitAudioContext",), rb"webkitAudioContext"),
+        ((b"HTMLCanvasElement",), rb"HTMLCanvasElement"),
+        ((b"Notification",), rb"Notification"),
+        ((b"addEventListener",), rb"addEventListener"),
+        ((b"querySelector",), rb"querySelector"),
+        ((b"createElement",), rb"createElement"),
+        ((b"appendChild",), rb"appendChild"),
+        ((b"postMessage",), rb"postMessage"),
+        ((b"srcdoc",), rb"srcdoc"),
+        ((b"execCommand",), rb"execCommand"),
+        ((b"cookie",), rb"cookie"),
+        ((b"history",), rb"history"),
+    ]
+}
+
+wsh_patterns = {
+    "WSH": [
+        ((b"WScript",), rb"WScript"),
+        ((b"ActiveXObject",), rb"ActiveXObject"),
+        ((b"CreateObject",), rb"WScript\.CreateObject"),
+        ((b"Shell",), rb"WScript\.Shell"),
+        ((b"FileSystemObject",), rb"Scripting\.FileSystemObject"),
+        ((b"Echo",), rb"WScript\.Echo"),
+        ((b"Quit",), rb"WScript\.Quit"),
+        ((b"Sleep",), rb"WScript\.Sleep"),
+        ((b"Arguments",), rb"WScript\.Arguments"),
+        ((b"ADODB.Stream", b"adodb.stream"), rb"ADODB\.Stream"),
+        ((b"MSXML2.XMLHTTP", b"msxml2.xmlhttp"), rb"MSXML2\.XMLHTTP"),
+    ]
+}
+
+obfuscation_patterns = {
+    "Obfuscation": [
+        ((b"fromCharCode",), rb"String\.fromCharCode"),
+        ((b" ^ ",), rb"\s\^\s"),
+        ((b"unescape",), rb"unescape\s*\("),
+        ((b"atob",), rb"atob\s*\("),
+        ((b"btoa",), rb"btoa\s*\("),
+        ((b"TextDecoder",), rb"TextDecoder"),
+        ((b"eval",), rb"eval\s*\("),
+        ((b"Function",), rb"Function\s*\("),
+    ]
+}
+
+browser_compiled_patterns = {}
+for category, patterns in browser_patterns.items():
+    browser_compiled_patterns[category] = [(literals, re.compile(p, re.IGNORECASE)) for literals, p in patterns]
+
+wsh_compiled_patterns = {}
+for category, patterns in wsh_patterns.items():
+    wsh_compiled_patterns[category] = [(literals, re.compile(p, re.IGNORECASE)) for literals, p in patterns]
+
+obfuscation_compiled_patterns = {}
+for category, patterns in obfuscation_patterns.items():
+    obfuscation_compiled_patterns[category] = [(literals, re.compile(p, re.IGNORECASE)) for literals, p in patterns]
+
+def javascript_runtime_analyze(f):
+    buf = f.scan_buffer
+    if not buf:
+        return {}
+
+    scores = {"Browser": 0, "NodeJS": 0, "WSH": 0}
+
+    # 1. NodeJS score
+    for category, pattern_list in nodejs_compiled_patterns.items():
+        for literals, pattern in pattern_list:
+            if not any(literal in buf for literal in literals):
+                continue
+            matches = pattern.findall(buf)
+            if matches:
+                scores["NodeJS"] += len(matches)
+
+    # 2. Browser score
+    for category, pattern_list in browser_compiled_patterns.items():
+        for literals, pattern in pattern_list:
+            # We lowercase the buffer for literals if we are case-insensitive, but it's okay standard literals are case matching mostly
+            # wait, pattern is ignorecase, we can just check ignorecase literals
+            if not any(literal.lower() in buf.lower() for literal in literals):
+                continue
+            matches = pattern.findall(buf)
+            if matches:
+                scores["Browser"] += len(matches)
+
+    # 3. WSH score
+    for category, pattern_list in wsh_compiled_patterns.items():
+        for literals, pattern in pattern_list:
+            if not any(literal.lower() in buf.lower() for literal in literals):
+                continue
+            matches = pattern.findall(buf)
+            if matches:
+                scores["WSH"] += len(matches)
+
+    # 4. Obfuscation detection
+    obf_detected = False
+    for category, pattern_list in obfuscation_compiled_patterns.items():
+        for literals, pattern in pattern_list:
+            if not any(literal.lower() in buf.lower() for literal in literals):
+                continue
+            if pattern.search(buf):
+                obf_detected = True
+                break
+        if obf_detected:
+            break
+
+    # 5. Determine primary target environment
+    total_score = sum(scores.values())
+    if total_score == 0:
+        target_env = "Universal"
+        confidence = "High" if len(buf.strip()) > 0 else "Low"
+    else:
+        primary_env = max(scores, key=scores.get)
+        ratio = float(scores[primary_env]) / total_score
+        confidence = "High" if ratio >= 0.7 else "Moderate"
+        target_env = primary_env
+
+    return {
+        "target_environment": target_env,
+        "confidence": confidence,
+        "scores": scores,
+        "obfuscation_detected": obf_detected,
+    }
 
 autoit_patterns = {
     # Word boundaries matter: "EndFunc"/"SetError" etc. are substrings of
@@ -567,6 +708,22 @@ def autoit(f):
 
 
 def javascript(f):
+    buf = f.scan_buffer
+    if not buf:
+        return
+
+    # Reject obvious binary formats early
+    if buf.startswith((b"PK\x03\x04", b"MZ", b"\x7fELF", b"Rar!", b"7z\xbc\xaf\x27\x1c", b"\xd0\xcf\x11\xe0")):
+        return
+
+    analysis = javascript_runtime_analyze(f)
+    js_score = 0
+    obf = False
+
+    if analysis:
+        js_score = sum(analysis.get("scores", {}).values())
+        obf = analysis.get("obfuscation_detected")
+
     JS_STRS = [
         b"var ",
         b"function ",
@@ -584,10 +741,17 @@ def javascript(f):
 
     found = 0
     for s in JS_STRS:
-        if s in f.contents:
+        if s in buf:
             found += 1
 
+    # Heuristic: require a combination of basic javascript strings AND runtime APIs, or a strong match from either.
     if found >= 5:
+        return "js"
+    if js_score >= 3:
+        return "js"
+    if found >= 2 and js_score >= 1:
+        return "js"
+    if obf and (found >= 2 or js_score >= 1):
         return "js"
 
 
@@ -716,6 +880,10 @@ def identify(f, check_shellcode: bool = False):
     if f.filename:
         for package, extensions in file_extensions.items():
             if f.filename.endswith(extensions) and not f.header.startswith(b"MZ"):
+                if package == "js":
+                    analysis = javascript_runtime_analyze(f)
+                    if analysis.get("target_environment") == "NodeJS" and analysis.get("confidence") in ("High", "Moderate"):
+                        return "nodejs"
                 return package
 
     for identifier in identifiers_special:
