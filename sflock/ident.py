@@ -587,7 +587,7 @@ wsh_patterns = {
 obfuscation_patterns = {
     "Obfuscation": [
         ((b"fromCharCode",), rb"String\.fromCharCode"),
-        ((b"^",), rb"\^"),
+        ((b" ^ ",), rb"\s\^\s"),
         ((b"unescape",), rb"unescape\s*\("),
         ((b"atob",), rb"atob\s*\("),
         ((b"btoa",), rb"btoa\s*\("),
@@ -708,10 +708,21 @@ def autoit(f):
 
 
 def javascript(f):
+    buf = f.scan_buffer
+    if not buf:
+        return
+
+    # Reject obvious binary formats early
+    if buf.startswith((b"PK\x03\x04", b"MZ", b"\x7fELF", b"Rar!", b"7z\xbc\xaf\x27\x1c", b"\xd0\xcf\x11\xe0")):
+        return
+
     analysis = javascript_runtime_analyze(f)
+    js_score = 0
+    obf = False
+
     if analysis:
-        if sum(analysis.get("scores", {}).values()) > 0 or analysis.get("obfuscation_detected"):
-            return "js"
+        js_score = sum(analysis.get("scores", {}).values())
+        obf = analysis.get("obfuscation_detected")
 
     JS_STRS = [
         b"var ",
@@ -730,10 +741,17 @@ def javascript(f):
 
     found = 0
     for s in JS_STRS:
-        if s in f.contents:
+        if s in buf:
             found += 1
 
+    # Heuristic: require a combination of basic javascript strings AND runtime APIs, or a strong match from either.
     if found >= 5:
+        return "js"
+    if js_score >= 3:
+        return "js"
+    if found >= 2 and js_score >= 1:
+        return "js"
+    if obf and (found >= 2 or js_score >= 1):
         return "js"
 
 
