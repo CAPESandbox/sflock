@@ -49,6 +49,7 @@ class TarFile(Unpacker):
                 relapath = entry.path.encode("utf-8", "replace")
             entries.append(File(relapath=relapath, contents=archive.extractfile(entry).read()))
 
+        archive.close()
         return self.process(entries, duplicates)
 
 
@@ -72,7 +73,7 @@ class TargzFile(TarFile, Unpacker):
             return ret
 
         fd, filepath = tempfile.mkstemp()
-        os.write(fd, self.f.stream.read(0x1000))
+        os.write(fd, self.f.header[:0x1000])
         os.close(fd)
 
         d = gzip.open(filepath)
@@ -140,7 +141,7 @@ class Tarbz2File(TarFile, Unpacker):
             return False
 
         fd, filepath = tempfile.mkstemp()
-        os.write(fd, self.f.stream.read(0x1000))
+        os.write(fd, self.f.header[:0x1000])
         os.close(fd)
 
         d = bz2.BZ2File(filepath, "r")

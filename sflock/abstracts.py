@@ -161,15 +161,13 @@ class Unpacker(object):
         for dirpath2, _, filepaths in os.walk(dirpath):
             for filepath in filepaths:
                 filepath = os.path.join(dirpath2, filepath)
-                if os.name == "nt":
-                    # On Windows, we need O_TEMPORARY flag to open
-                    # file with FILE_SHARE_DELETE share mode
-                    stream = open(filepath, "rb", opener=lambda path, flags: os.open(path, flags | os.O_TEMPORARY))
-                else:
-                    stream = open(filepath, "rb")
-                entries.append(File(relapath=filepath[len(dirpath) + 1 :], password=password, stream=stream))
+                f_entry = File(relapath=filepath[len(dirpath) + 1 :], password=password)
+                f_entry._temp_filepath = filepath
+                entries.append(f_entry)
 
-        shutil.rmtree(dirpath)
+        if not hasattr(self.f, "temp_dirs"):
+            self.f.temp_dirs = []
+        self.f.temp_dirs.append(dirpath)
         return self.process(entries, duplicates, password)
 
     def bruteforce(self, passwords, *args, **kwargs):
@@ -207,7 +205,19 @@ class Decoder(object):
         pass
 
 
+
+import weakref
+
+def _cleanup_temp_dirs(temp_dirs):
+    import shutil
+    for d in temp_dirs:
+        try:
+            shutil.rmtree(d)
+        except Exception:
+            pass
+
 class File(object):
+
     """Abstract class for all file operations.
 
     The `filepath` represents any filepath accessible on the disk.
@@ -248,6 +258,8 @@ class File(object):
         self.description = description
         self.password = password
         self.children = []
+        self.temp_dirs = []
+        self._finalizer = weakref.finalize(self, _cleanup_temp_dirs, self.temp_dirs)
         self.duplicate = False
         self.unpacker = None
         self.parent = None
@@ -259,6 +271,7 @@ class File(object):
 
         self._contents = contents
         self._package = None
+        self._temp_filepath = None
         self._platform = platform
         self._selected = selected
         self._sha256 = None
@@ -290,7 +303,8 @@ class File(object):
     def contents(self):
         if self._contents is None:
             if self.filepath:
-                self._contents = open(self.filepath, "rb").read()
+                with open(self.filepath or self._temp_filepath, "rb") as f:
+                    self._contents = f.read()
             elif self._stream is not None:
                 self._stream.seek(0)
                 self._contents = self._stream.read()
@@ -299,7 +313,10 @@ class File(object):
     @property
     def stream(self):
         if not self._stream:
-            return io.BytesIO(self.contents)
+            if self.filepath and os.path.exists(self.filepath or self._temp_filepath):
+                self._stream = open(self.filepath or self._temp_filepath, "rb")
+            else:
+                return io.BytesIO(self.contents)
 
         self._stream.seek(0)
         return self._stream
@@ -307,18 +324,30 @@ class File(object):
     @property
     def sha256(self):
         if not self._sha256:
-            h, s, buf = hashlib.sha256(), self.stream, True
-            while buf:
-                buf = s.read(0x10000)
-                h.update(buf)
-
+            h = hashlib.sha256()
+            if (self.filepath or self._temp_filepath) and not self._stream and not self._contents:
+                with open(self.filepath or self._temp_filepath, "rb") as f:
+                    while True:
+                        buf = f.read(0x10000)
+                        if not buf:
+                            break
+                        h.update(buf)
+            else:
+                s, buf = self.stream, True
+                while buf:
+                    buf = s.read(0x10000)
+                    h.update(buf)
             self._sha256 = h.hexdigest()
         return self._sha256
 
     @property
     def header(self):
         if not self._header and self.filesize:
-            self._header = self.stream.read(1024 * 1024)
+            if (self.filepath or self._temp_filepath) and not self._stream and not self._contents:
+                with open(self.filepath or self._temp_filepath, "rb") as f:
+                    self._header = f.read(1024 * 1024)
+            else:
+                self._header = self.stream.read(1024 * 1024)
         return self._header or b""
 
     @property
@@ -331,8 +360,8 @@ class File(object):
             elif self._stream is not None:
                 self._stream.seek(0)
                 self._scan_buffer = self._stream.read(MAX_IDENT_SCAN_SIZE)
-            elif self.filepath:
-                with open(self.filepath, "rb") as fh:
+            elif (self.filepath or self._temp_filepath):
+                with open(self.filepath or self._temp_filepath, "rb") as fh:
                     self._scan_buffer = fh.read(MAX_IDENT_SCAN_SIZE)
         return self._scan_buffer or b""
 
@@ -384,6 +413,11 @@ class File(object):
 
     @property
     def filesize(self):
+        if (self.filepath or self._temp_filepath) and not self._stream and not self._contents:
+            try:
+                return os.path.getsize(self.filepath or self._temp_filepath)
+            except OSError:
+                pass
         s = self.stream
         s.seek(0, os.SEEK_END)
         return s.tell()
@@ -450,6 +484,13 @@ class File(object):
             self._stream = None
         for child in self.children:
             child.close()
+        for d in getattr(self, "temp_dirs", []):
+            try:
+                import shutil
+                shutil.rmtree(d)
+            except Exception:
+                pass
+        self.temp_dirs = []
 
     def raise_no_ole(self, message):
         if self.ole is None:
