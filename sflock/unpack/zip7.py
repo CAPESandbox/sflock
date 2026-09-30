@@ -25,11 +25,11 @@ class ZipFile(Unpacker):
         # MSIX shouldn't be unpacked
         if hasattr(self.f, "filename") and self.f.filename and self.f.filename.endswith(self.exts):
             return True
-        if self.f.contents and all([pattern in self.f.contents for pattern in (b"Registry.dat", b"AppxManifest.xml")]):
+        if self.f.scan_buffer and all([pattern in self.f.scan_buffer for pattern in (b"Registry.dat", b"AppxManifest.xml")]):
             return False
         if super(ZipFile, self).handles():
             return True
-        if self.f.stream.read(2) == b"PK":
+        if self.f.scan_buffer.startswith(b"PK"):
             return True
 
     def unpack(self, password=None, duplicates=None):

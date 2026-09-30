@@ -25,10 +25,9 @@ class EmlFile(Unpacker):
         if super(EmlFile, self).handles():
             return True
 
-        stream = self.f.stream
         keys = []
-        for _ in range(10):
-            line = stream.readline()
+        lines = self.f.scan_buffer.split(b"\n")
+        for line in lines[:10]:
             if b":" in line:
                 keys.append(line.split(b":")[0])
         if b"From" in keys and b"To" in keys:
