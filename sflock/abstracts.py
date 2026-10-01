@@ -302,10 +302,11 @@ class File(object):
     @property
     def contents(self):
         if self._contents is None:
-            if self.filepath:
-                with open(self.filepath or self._temp_filepath, "rb") as f:
+            path = self.filepath or getattr(self, "_temp_filepath", None)
+            if path and __import__("os").path.exists(path):
+                with open(path, "rb") as f:
                     self._contents = f.read()
-            elif self._stream is not None:
+            elif getattr(self, "_stream", None) is not None:
                 self._stream.seek(0)
                 self._contents = self._stream.read()
         return self._contents
