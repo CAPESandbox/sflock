@@ -4,7 +4,6 @@
 # See the file 'docs/LICENSE.txt' for copying permission.
 
 import os
-import tempfile
 
 from sflock.abstracts import Unpacker
 
@@ -16,13 +15,13 @@ class RarFile(Unpacker):
     magic = "RAR archive"
 
     def unpack(self, password: str = None, duplicates=None):
-        dirpath = tempfile.mkdtemp()
+        dirpath = self.mkdtemp()
 
         if self.f.filepath:
             filepath = self.f.filepath
             temporary = False
         else:
-            filepath = self.f.temp_path()
+            filepath = self.temp_path()
             temporary = True
 
         ret = self.zipjail(filepath, dirpath, "x", "-mt1", "-p%s" % (password or "-"), filepath, dirpath)
