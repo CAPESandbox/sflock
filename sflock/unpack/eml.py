@@ -64,11 +64,13 @@ class EmlFile(Unpacker):
     def unpack(self, password=None, duplicates=None):
         re_compile_orig = re.compile
 
-        def re_compile_our(pattern):
+        # Forward flags: Python 3.14's email.feedparser calls re.compile(pattern, flags).
+        def re_compile_our(pattern, *args, **kwargs):
             if isinstance(pattern, bytes):
-                return re_compile_orig(pattern.replace(br"?P<end>--", br"?P<end>--+"))
-            else:
-                return re_compile_orig(pattern.replace("?P<end>--", "?P<end>--+"))
+                pattern = pattern.replace(rb"?P<end>--", rb"?P<end>--+")
+            elif isinstance(pattern, str):
+                pattern = pattern.replace("?P<end>--", "?P<end>--+")
+            return re_compile_orig(pattern, *args, **kwargs)
 
         re.compile = re_compile_our
         try:
