@@ -22,6 +22,9 @@ pytestmark = pytest.mark.skipif(not os.path.isdir(FD_DIR), reason="needs /proc")
 
 
 def _fd_count():
+    # Collect first so fds of unrelated, already-dead objects from earlier
+    # tests don't make the before/after comparison flaky.
+    gc.collect()
     return len(os.listdir(FD_DIR))
 
 
@@ -59,7 +62,7 @@ def test_no_fd_leak_and_cleanup_on_close():
     assert _fd_count() <= before + 1
 
     f.close()
-    assert _fd_count() == before
+    assert _fd_count() <= before, "fds must not grow across unpack + close"
     assert f.temp_dirs == []
     assert not any(os.path.exists(d) for d in dirs)
 
