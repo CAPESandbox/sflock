@@ -1,5 +1,5 @@
 name: 'Python setup steps that can be reused'
-description: 'Install dependencies, poetry, requirements'
+description: 'Install system dependencies, uv, and project requirements'
 inputs:
   python-version:
     required: true
@@ -13,16 +13,13 @@ runs:
       shell: bash
       run: sudo apt-get update && sudo apt-get install -y --no-install-recommends p7zip-full libxml2-dev libxslt-dev python3-dev libgeoip-dev ssdeep libfuzzy-dev zpaq rar unace-nonfree cabextract lzip libjpeg8-dev zlib1g-dev gnupg
 
-    - name: Install poetry
-      shell: bash
-      run: pip install poetry poetry-dynamic-versioning
-
-    - name: Set up Python ${{ inputs.python-version }}
-      uses: actions/setup-python@v5
+    - name: Install uv and Python ${{ inputs.python-version }}
+      uses: astral-sh/setup-uv@v10.2.0
       with:
         python-version: ${{ inputs.python-version }}
-        cache: 'poetry'
+        enable-cache: true
+        cache-dependency-glob: uv.lock
 
     - name: Install requirements
       shell: bash
-      run: poetry sync --with dev -E shellcode -E linux
+      run: uv sync --locked --extra shellcode --extra linux --group dev
