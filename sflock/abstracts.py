@@ -48,8 +48,18 @@ class Unpacker(object):
     def zipjail(self, filepath, dirpath, *args):
         zipjail = data_file(b"zipjail.elf")
         # Consider for future make c=X as argument. If we have many children it will give one clone per child
+        
+        def to_bytes(x):
+            if isinstance(x, str):
+                return x.encode("utf-8")
+            return x
+
+        args_list = [zipjail, to_bytes(filepath), to_bytes(dirpath), b"-c=30", b"--", to_bytes(self.exe)]
+        for a in args:
+            args_list.append(to_bytes(a))
+
         p = subprocess.Popen(
-            (zipjail, filepath, dirpath, "-c=30", "--", self.exe) + args,
+            args_list,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -59,6 +69,7 @@ class Unpacker(object):
         # return_code = p.wait()
         out, err = p.communicate()
         return_code = p.returncode
+        print("ZIPJAIL OUTPUT", out, err, return_code)
 
         if b"Excessive writing caused incomplete unpacking!" in err:
             self.f.error = "files_too_large"
