@@ -5,6 +5,7 @@
 
 import os
 import tempfile
+import zipfile
 from sflock.abstracts import Unpacker
 from sflock.misc import data_file, get_metadata_7z
 
@@ -21,15 +22,27 @@ class ZipFile(Unpacker):
     def supported(self):
         return True
 
+    _MSIX_MARKERS = frozenset(("Registry.dat", "AppxManifest.xml"))
+
+    def _is_msix(self):
+        try:
+            with self.f.open() as fh:
+                names = zipfile.ZipFile(fh).namelist()
+        except Exception:
+            # Malformed/truncated input: let the regular zip path decide.
+            return False
+        return self._MSIX_MARKERS <= {name.rsplit("/", 1)[-1] for name in names}
+
     def handles(self):
-        # MSIX shouldn't be unpacked
-        if hasattr(self.f, "filename") and self.f.filename and self.f.filename.endswith(self.exts):
+        if self.f.filename and self.f.filename.endswith(self.exts):
             return True
-        if self.f.scan_buffer and all([pattern in self.f.scan_buffer for pattern in (b"Registry.dat", b"AppxManifest.xml")]):
+        is_pk = self.f.scan_buffer.startswith(b"PK")
+        # MSIX shouldn't be unpacked
+        if is_pk and self._is_msix():
             return False
         if super(ZipFile, self).handles():
             return True
-        if self.f.scan_buffer.startswith(b"PK"):
+        if is_pk:
             return True
 
     def unpack(self, password=None, duplicates=None):
