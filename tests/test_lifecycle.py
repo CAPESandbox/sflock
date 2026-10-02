@@ -144,3 +144,45 @@ def test_probe_decompress_in_memory():
     assert _probe_decompress(__import__("gzip").open, data[:16]) in (True, False)
     assert TargzFile(File(contents=data)).handles()
     assert not Tarbz2File(File(contents=b"\x00" * 64)).handles()
+
+
+class _FailingUnpacker(abstracts.Unpacker):
+    """Creates owned temp dirs/inputs then bails out, like a failed zipjail run."""
+
+    name = "failing"
+    created = []
+
+    def supported(self):
+        return True
+
+    def handles(self):
+        return True
+
+    def unpack(self, password=None, duplicates=None):
+        dirpath = self.mkdtemp()
+        with open(os.path.join(dirpath, "output"), "wb") as fh:
+            fh.write(b"x" * 4096)
+        _FailingUnpacker.created += [dirpath, os.path.dirname(self.temp_path(b".bin"))]
+        return []
+
+
+def test_failed_unpack_reclaims_temp_dirs_immediately(monkeypatch):
+    monkeypatch.setattr(abstracts.Unpacker, "plugins", {"failing": _FailingUnpacker})
+    _FailingUnpacker.created = []
+    f = File(contents=b"data")
+    abstracts.Unpacker(None).process([f], [])
+    assert f.children == []
+    assert _FailingUnpacker.created
+    for d in _FailingUnpacker.created:
+        assert not os.path.exists(d)
+    assert f.temp_dirs == []
+
+
+def test_direct_unpack_early_return_cleaned_on_close():
+    f = File(contents=b"data")
+    u = _FailingUnpacker(f)
+    _FailingUnpacker.created = []
+    assert u.unpack() == []
+    assert all(os.path.exists(d) for d in _FailingUnpacker.created)
+    f.close()
+    assert not any(os.path.exists(d) for d in _FailingUnpacker.created)
