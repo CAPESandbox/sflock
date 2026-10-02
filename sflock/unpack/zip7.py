@@ -4,7 +4,6 @@
 # See the file 'docs/LICENSE.txt' for copying permission.
 
 import os
-import tempfile
 import zipfile
 from sflock.abstracts import Unpacker
 from sflock.misc import data_file, get_metadata_7z
@@ -46,7 +45,7 @@ class ZipFile(Unpacker):
             return True
 
     def unpack(self, password=None, duplicates=None):
-        dirpath = tempfile.mkdtemp()
+        dirpath = self.mkdtemp()
 
         if not password:
             password = ""
@@ -55,7 +54,7 @@ class ZipFile(Unpacker):
             filepath = self.f.filepath
             temporary = False
         else:
-            filepath = self.f.temp_path(b".zip")
+            filepath = self.temp_path(b".zip")
             temporary = True
 
         ret = self.zipjail(filepath, dirpath, "x", "-mmt=off", "-p%s" % password, "-o%s" % dirpath, filepath)
@@ -95,13 +94,13 @@ class Zip7File(Unpacker):
         return False
 
     def unpack(self, password=None, duplicates=None):
-        dirpath = tempfile.mkdtemp()
+        dirpath = self.mkdtemp()
 
         if self.f.filepath:
             filepath = self.f.filepath
             temporary = False
         else:
-            filepath = self.f.temp_path(b".7z")
+            filepath = self.temp_path(b".7z")
             temporary = True
         if not password:
             password = ""
@@ -128,13 +127,13 @@ class GzipFile(Unpacker):
     magic = "gzip compressed data, was"
 
     def unpack(self, password=None, duplicates=None):
-        dirpath = tempfile.mkdtemp()
+        dirpath = self.mkdtemp()
 
         if self.f.filepath:
             filepath = self.f.filepath
             temporary = False
         else:
-            filepath = self.f.temp_path(".7z")
+            filepath = self.temp_path(".7z")
             temporary = True
 
         ret = self.zipjail(filepath, dirpath, "x", "-o%s" % dirpath, filepath)
@@ -154,13 +153,13 @@ class LzhFile(Unpacker):
     magic = "LHa ("
 
     def unpack(self, password=None, duplicates=None):
-        dirpath = tempfile.mkdtemp()
+        dirpath = self.mkdtemp()
 
         if self.f.filepath:
             filepath = self.f.filepath
             temporary = False
         else:
-            filepath = self.f.temp_path(".7z")
+            filepath = self.temp_path(".7z")
             temporary = True
 
         ret = self.zipjail(filepath, dirpath, "x", "-o%s" % dirpath, filepath)
@@ -183,13 +182,13 @@ class VHDFile(Unpacker):
     magic = " Microsoft Disk Image"
 
     def unpack(self, password=None, duplicates=None):
-        dirpath = tempfile.mkdtemp()
+        dirpath = self.mkdtemp()
 
         if self.f.filepath:
             filepath = self.f.filepath
             temporary = False
         else:
-            filepath = self.f.temp_path(".vhd")
+            filepath = self.temp_path(".vhd")
             temporary = True
 
         ret = self.zipjail(filepath, dirpath, "x", "-xr![SYSTEM]*", "-o%s" % dirpath, filepath)
@@ -213,13 +212,13 @@ class WimFile(Unpacker):
     magic = "Windows imaging (WIM) image"
 
     def unpack(self, password=None, duplicates=None):
-        dirpath = tempfile.mkdtemp()
+        dirpath = self.mkdtemp()
 
         if self.f.filepath:
             filepath = self.f.filepath
             temporary = False
         else:
-            filepath = self.f.temp_path(".wim")
+            filepath = self.temp_path(".wim")
             temporary = True
 
         ret = self.zipjail(filepath, dirpath, "x", "-o%s" % dirpath, filepath)
@@ -239,13 +238,13 @@ class XZFile(Unpacker):
     magic = "XZ compressed data"
 
     def unpack(self, password=None, duplicates=None):
-        dirpath = tempfile.mkdtemp()
+        dirpath = self.mkdtemp()
 
         if self.f.filepath:
             filepath = self.f.filepath
             temporary = False
         else:
-            filepath = self.f.temp_path(".7z")
+            filepath = self.temp_path(".7z")
             temporary = True
 
         ret = self.zipjail(filepath, dirpath, "x", "-o%s" % dirpath, filepath)
@@ -266,13 +265,13 @@ class NSIS(Unpacker):
     magic = "Nullsoft Installer self-extracting archive"
 
     def unpack(self, password=None, duplicates=None):
-        dirpath = tempfile.mkdtemp()
+        dirpath = self.mkdtemp()
 
         if self.f.filepath:
             filepath = self.f.filepath
             temporary = False
         else:
-            filepath = self.f.temp_path(b".7z")
+            filepath = self.temp_path(b".7z")
             temporary = True
         ret = self.zipjail(filepath, dirpath, "x", "-mmt=off", "-o{}".format(dirpath), filepath)
         if not ret:
@@ -294,13 +293,13 @@ class MachoFat(Unpacker):
     magic = "Mach-O universal binary with "
 
     def unpack(self, password=None, duplicates=None):
-        dirpath = tempfile.mkdtemp()
+        dirpath = self.mkdtemp()
 
         if self.f.filepath:
             filepath = self.f.filepath
             temporary = False
         else:
-            filepath = self.f.temp_path(".7z")
+            filepath = self.temp_path(".7z")
             temporary = True
 
         ret = self.zipjail(filepath, dirpath, "x", "-o%s" % dirpath, filepath)

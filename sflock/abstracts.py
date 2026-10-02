@@ -116,6 +116,26 @@ class Unpacker(object):
     def unpack(self, password=None, duplicates=None):
         raise NotImplementedError
 
+    def mkdtemp(self):
+        """Creates a temporary directory owned by `self.f`.
+
+        Registered immediately, so it is removed on `self.f.close()`/GC even
+        if `unpack()` bails out early, and right away by `process()` when the
+        unpacker yields no children.
+        """
+        dirpath = tempfile.mkdtemp()
+        if self.f is not None:
+            self.f.temp_dirs.append(dirpath)
+        return dirpath
+
+    def temp_path(self, suffix=""):
+        """On-disk copy of `self.f` inside an owned temporary directory (see
+        `mkdtemp`). Callers may still unlink it early."""
+        dirpath = self.mkdtemp()
+        if isinstance(suffix, bytes):
+            dirpath = os.fsencode(dirpath)
+        return self.f.temp_path(suffix, dir=dirpath)
+
     def process(self, entries, duplicates, password=None):
         """Recursively unpacks embedded archives if found."""
         if duplicates is None:
@@ -136,6 +156,9 @@ class Unpacker(object):
                     f.metadata = plugin.get_metadata()
                     if f.children:
                         break
+                    # Nothing references files in a failed unpacker's
+                    # directories; reclaim them now rather than at close/GC.
+                    _cleanup_temp_dirs(f.temp_dirs)
 
             if f.sha256 not in duplicates:
                 duplicates.append(f.sha256)
@@ -170,7 +193,8 @@ class Unpacker(object):
                 filepath = os.path.join(dirpath2, filepath)
                 entries.append(File(relapath=filepath[len(dirpath) + 1 :], password=password, temp_filepath=filepath))
 
-        self.f.temp_dirs.append(dirpath)
+        if dirpath not in self.f.temp_dirs:
+            self.f.temp_dirs.append(dirpath)
         return self.process(entries, duplicates, password)
 
     def bruteforce(self, passwords, *args, **kwargs):
@@ -328,10 +352,10 @@ class File(object):
                 return fh
         return io.BytesIO(self.contents or b"")
 
-    def temp_path(self, suffix=""):
+    def temp_path(self, suffix="", dir=None):
         # TODO Depending on use-case we may not need a full copy. Perhaps
         # abstract away the "if self.f.filepath ... else ..." logic?
-        fd, filepath = tempfile.mkstemp(suffix=suffix)
+        fd, filepath = tempfile.mkstemp(suffix=suffix, dir=dir)
         with os.fdopen(fd, "wb") as dst, self.open() as src:
             shutil.copyfileobj(src, dst)
         return filepath

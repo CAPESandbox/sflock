@@ -8,7 +8,6 @@ import gzip
 import io
 import os
 import tarfile
-import tempfile
 import zlib
 
 from sflock.abstracts import Unpacker, File
@@ -86,10 +85,10 @@ class TargzFile(TarFile, Unpacker):
         return _probe_decompress(gzip.open, self.f.header[:0x1000])
 
     def unpack(self, password=None, duplicates=None):
-        dirpath = tempfile.mkdtemp()
+        dirpath = self.mkdtemp()
 
         if not self.f.filepath:
-            filepath = self.f.temp_path(".gz")
+            filepath = self.temp_path(".gz")
             temporary = True
         else:
             filepath = self.f.filepath
@@ -139,10 +138,10 @@ class Tarbz2File(TarFile, Unpacker):
         return _probe_decompress(bz2.open, self.f.header[:0x1000])
 
     def unpack(self, password=None, duplicates=None):
-        dirpath = tempfile.mkdtemp()
+        dirpath = self.mkdtemp()
 
         if not self.f.filepath:
-            filepath = self.f.temp_path(".bz2")
+            filepath = self.temp_path(".bz2")
             temporary = True
         else:
             filepath = self.f.filepath
