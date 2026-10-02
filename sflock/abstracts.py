@@ -642,7 +642,8 @@ class File(object):
                 if not os.path.exists(os.path.dirname(filepath)):
                     os.mkdir(os.path.dirname(filepath))
 
-            shutil.copyfileobj(child.stream, open(filepath, "wb"), 1024 * 1024)
+            with child.open() as src, open(filepath, "wb") as dst:
+                shutil.copyfileobj(src, dst, 1024 * 1024)
             child.extract(dirpath, preserve=preserve)
 
     def read(self, relapath, stream=False):
