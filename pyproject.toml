@@ -1,45 +1,52 @@
-[tool.poetry]
+[build-system]
+requires = ["hatchling>=1.27", "hatch-vcs>=0.4"]
+build-backend = "hatchling.build"
+
+[project]
 name = "SFlock2"
-version = "0.3.77"
+dynamic = ["version"]
 description = "Sample staging and detonation utility"
-authors = ["Hatching B.V. <jbr@hatching.io>"]
-license = "GPL-3.0-only" # It's best practice to use SPDX identifiers
+authors = [{ name = "Hatching B.V.", email = "jbr@hatching.io" }]
+license = "GPL-3.0-only"
 readme = "README.md"
 keywords = ["sflock", "unarchive"]
-packages = [{ include = "sflock" }]
-include = ["sflock/**"]
+requires-python = ">=3.10, <4.0"
+dependencies = [
+    "click",
+    "cryptography>=44.0.0",
+    "olefile>=0.43",
+    "pefile",
+    "python-dateutil",
+]
 
-[tool.poetry.dependencies]
-click = "*"
-cryptography = ">=44.0.0"
-olefile = ">=0.43"
-pefile = "*"
-python = ">=3.10, <4.0"
-python-dateutil = "*"
+[project.optional-dependencies]
+linux = ["python-magic>=0.4.13; sys_platform == 'linux'"]
+windows = ["python-magic-bin>=0.4.14; sys_platform == 'win32'"]
+shellcode = ["unicorn>=2.0.0", "yara-x>=1.0.0"]
 
-# optional deps
-unicorn = { version = ">=2.0.0", optional = true }
-yara-x = { version = ">=1.0.0", optional = true }
-python-magic-bin = { version = ">=0.4.14", markers = "sys_platform == 'win32'" }
-python-magic = { version = ">=0.4.13", markers = "sys_platform == 'linux'" }
-
-[tool.poetry.group.dev.dependencies]
-codecov = "*"
-mock = ">=5.1.0"
-pytest = ">=8.3.4"
-pytest-cov = "*"
-
-[tool.poetry.extras]
-linux = ["python-magic"]
-shellcode = ["unicorn", "yara-x"]
-windows = ["python-magic-bin"]
-
-[tool.poetry.scripts]
+[project.scripts]
 sflock = "sflock.main:main"
 
-[tool.poetry-dynamic-versioning]
-enable = true # Master switch to enable the plugin
+[dependency-groups]
+dev = [
+    "codecov",
+    "mock>=5.1.0",
+    "pytest>=8.3.4",
+    "pytest-cov",
+]
 
-[build-system]
-requires = ["poetry-core>=1.0.0", "poetry-dynamic-versioning"]
-build-backend = "poetry.core.masonry.api"
+# Version comes from the latest git tag (vX.Y.Z), as before with
+# poetry-dynamic-versioning. No local version segment so builds from
+# untagged commits remain uploadable.
+[tool.hatch.version]
+source = "vcs"
+fallback-version = "0.0.0"
+
+[tool.hatch.version.raw-options]
+local_scheme = "no-local-version"
+
+[tool.hatch.build.targets.wheel]
+packages = ["sflock"]
+
+[tool.hatch.build.targets.sdist]
+include = ["/sflock", "/README.md"]

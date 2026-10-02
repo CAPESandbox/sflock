@@ -1,4 +1,4 @@
-name: Publish Python 🐍 distribution 📦 to PyPI and GitHub (Poetry)
+name: Publish Python 🐍 distribution 📦 to PyPI and GitHub
 
 # This trigger is already modern and robust, we'll keep it.
 on:
@@ -18,19 +18,15 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Correctly kept for dynamic versioning
+          fetch-depth: 0 # Required: version is derived from git tags (hatch-vcs)
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Install uv
+        uses: astral-sh/setup-uv@v10.2.0
         with:
           python-version: "3.12"
 
-      - name: Install poetry
-        shell: bash
-        run: PIP_BREAK_SYSTEM_PACKAGES=1 pip install poetry poetry-dynamic-versioning --user
-
       - name: Build a binary wheel and a source tarball
-        run: poetry build
+        run: uv build
 
       - name: Store the distribution packages
         uses: actions/upload-artifact@v4
@@ -39,7 +35,7 @@ jobs:
           path: dist/
 
   # The following jobs are builder-agnostic and work perfectly with the
-  # artifacts produced by 'poetry build'.
+  # artifacts produced by 'uv build'.
 
   publish-to-pypi:
     name: Publish distribution 📦 to PyPI
