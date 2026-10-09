@@ -861,7 +861,7 @@ def inf(f):
 
 
 def identify(f, check_shellcode: bool = False):
-    if not f.stream.read(0x1000):
+    if not f.header:
         return
 
     if is_executable(f):

@@ -4,7 +4,6 @@
 # See the file 'docs/LICENSE.txt' for copying permission.
 
 import os
-import tempfile
 
 from sflock.abstracts import Unpacker
 
@@ -16,13 +15,13 @@ class CabFile(Unpacker):
     magic = "Microsoft Cabinet archive"
 
     def unpack(self, password=None, duplicates=None):
-        dirpath = tempfile.mkdtemp()
+        dirpath = self.mkdtemp()
 
         if self.f.filepath:
             filepath = os.path.abspath(self.f.filepath)
             temporary = False
         else:
-            filepath = self.f.temp_path(".cab")
+            filepath = self.temp_path(".cab")
             temporary = True
 
         ret = self.zipjail(filepath, dirpath, "-d%s" % dirpath, filepath)

@@ -4,7 +4,6 @@
 # See the file 'docs/LICENSE.txt' for copying permission.
 
 import os
-import tempfile
 
 from sflock.abstracts import Unpacker
 
@@ -16,7 +15,7 @@ class AceFile(Unpacker):
     magic = "ACE archive"
 
     def unpack(self, password=None, duplicates=None):
-        dirpath = tempfile.mkdtemp()
+        dirpath = self.mkdtemp()
         original_path = self.f.filepath
         if self.f.filepath:
             if not self.f.filepath.endswith(b".ace"):
@@ -25,12 +24,10 @@ class AceFile(Unpacker):
             filepath = os.path.abspath(self.f.filepath)
             temporary = False
         else:
-            filepath = self.f.temp_path(b".ace")
+            filepath = self.temp_path(b".ace")
             temporary = True
 
         ret = self.zipjail(filepath, dirpath, "x", filepath, dirpath + os.sep)
-        if not ret:
-            return []
 
         if temporary:
             os.unlink(filepath)
@@ -38,5 +35,8 @@ class AceFile(Unpacker):
         if original_path != self.f.filepath:
             os.rename(self.f.filepath, original_path)
             self.f.filepath = original_path
+
+        if not ret:
+            return []
 
         return self.process_directory(dirpath, duplicates)

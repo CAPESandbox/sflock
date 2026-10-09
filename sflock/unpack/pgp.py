@@ -6,7 +6,6 @@
 import os
 import shutil
 import subprocess
-import tempfile
 
 from sflock.abstracts import Unpacker
 
@@ -35,13 +34,13 @@ class PGP(Unpacker):
         return "encrypted_message" in self.get_metadata()
 
     def unpack(self, password: str = None, duplicates=None):
-        dirpath = tempfile.mkdtemp()
+        dirpath = self.mkdtemp()
 
         if self.f.filepath:
             filepath = self.f.filepath
             temporary = False
         else:
-            filepath = self.f.temp_path()
+            filepath = self.temp_path()
             temporary = True
         # ToDo
         # locked system call occurred during sandboxing!\nip=0x7f9d2bc0fa97 sp=0x7ffdcb8d5eb8 abi=0 nr=102 syscall=getuid
