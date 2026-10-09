@@ -54,6 +54,9 @@ class ZipFile(Unpacker):
         if temporary:
             os.unlink(filepath)
 
+        if password:
+            self.f.password = password
+
         return self.process_directory(dirpath, duplicates, password=password)
 
     def get_metadata(self):
@@ -66,6 +69,17 @@ class Zip7File(Unpacker):
     exts = b".7z", b".iso", b".udf", b".xz"
     # TODO Should we use "isoparser" (check PyPI) instead of 7z?
     magic = "7-zip archive", "ISO 9660", "UDF filesystem data", "XZ compressed data"
+
+    def handles(self):
+        if super(Zip7File, self).handles():
+            return True
+        header = self.f.header
+        if len(header) > 0x8000:
+            udf_window = header[0x8000:0x10000]
+            udf_sigs = (b"CD001", b"BEA01", b"NSR02", b"NSR03", b"BOOT2", b"TEA01")
+            if sum(1 for sig in udf_sigs if sig in udf_window) >= 3:
+                return True
+        return False
 
     def unpack(self, password=None, duplicates=None):
         dirpath = tempfile.mkdtemp()
@@ -84,6 +98,9 @@ class Zip7File(Unpacker):
 
         if temporary:
             os.unlink(filepath)
+
+        if password:
+            self.f.password = password
 
         return self.process_directory(dirpath, duplicates, password=password)
 

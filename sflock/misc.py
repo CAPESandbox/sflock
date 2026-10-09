@@ -7,7 +7,7 @@ import os
 import importlib
 import platform
 from dateutil.parser import parse as dtparse
-from subprocess import run
+from subprocess import DEVNULL, run
 import sflock
 
 def get_os():
@@ -60,15 +60,36 @@ def make_list(obj):
     return [obj]
 
 
-def get_metadata_7z(f):
+def get_metadata_7z(f, password=None):
     fp = f.filepath
     clean = False
     if fp is None:
         fp = f.temp_path(".bin")  # extension doesn't matter
         clean = True
 
-    p = run([data_file(b'zipjail.elf'), fp, b'/dev/null', b'--', data_file(b"7zz.elf"), b'l', b'-slt', fp],
-            capture_output=True, env=dict(os.environ, TZ="UTC"))
+    password = password if password is not None else (getattr(f, "password", None) or "")
+    if isinstance(password, bytes):
+        password = password.decode("utf-8", "replace")
+    pwd_arg = ("-p%s" % password).encode("utf-8", "replace")
+
+    p = run(
+        [
+            data_file(b"zipjail.elf"),
+            fp,
+            b"/dev/null",
+            b"-c=30",
+            b"--",
+            data_file(b"7zz.elf"),
+            b"l",
+            b"-slt",
+            b"-mmt=off",
+            pwd_arg,
+            fp,
+        ],
+        stdin=DEVNULL,
+        capture_output=True,
+        env=dict(os.environ, TZ="UTC"),
+    )
     ret = []
     if p.returncode == 0:
         _, _, out = p.stdout.partition(b'----------')

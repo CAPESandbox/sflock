@@ -153,6 +153,52 @@ class Test7zFile(object):
             }
         ]
 
+    def test_7z_encrypted_headers(self, tmp_path):
+        import subprocess
+        from sflock.misc import data_file
+
+        src = tmp_path / "bar.txt"
+        src.write_bytes(b"hello world\n")
+        archive = tmp_path / "encrypted_mhe.7z"
+        subprocess.run(
+            [
+                data_file(b"7zz.elf"),
+                b"a",
+                b"-mhe=on",
+                b"-psecret",
+                os.fsencode(archive),
+                os.fsencode(src),
+            ],
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+
+        # Unpacking without password must not hang on stdin password prompt.
+        t_nopw = unpack(os.fsencode(archive))
+        assert t_nopw.children == []
+        assert t_nopw.metadata == []
+
+        # Unpacking with password extracts contents and populates metadata.
+        t_pw = unpack(os.fsencode(archive), password="secret")
+        assert len(t_pw.children) == 1
+        assert t_pw.children[0].relapath == b"bar.txt"
+        assert t_pw.children[0].contents == b"hello world\n"
+        assert len(t_pw.metadata) == 1
+        assert t_pw.metadata[0]["path"] == "bar.txt"
+        assert t_pw.metadata[0]["encrypted"] == "+"
+
+    def test_udf_descriptor_handles(self):
+        buf = bytearray(0x10000)
+        buf[0x8001:0x8006] = b"BEA01"
+        buf[0x8801:0x8806] = b"NSR02"
+        buf[0x9001:0x9006] = b"TEA01"
+        udf_file = File(contents=bytes(buf))
+        udf_file._magic = "data"
+        assert Zip7File(udf_file).handles() is True
+
+
+
 
 @pytest.mark.skipif("Zip7File(None).supported()")
 def test_no7z_plain():
