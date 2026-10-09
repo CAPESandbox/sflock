@@ -10,14 +10,24 @@ from sflock.auxiliary.decode_vbe_jse import decode_file as vbe_decode_file
 
 
 try:
-    import yara
+    import yara_x
 
     cur_dir = os.path.dirname(os.path.abspath(__file__))
-    shellcode_rules = yara.compile(filepath=os.path.join(cur_dir, "data", "yara", "shellcodes.yar"))
-    archives_rules = yara.compile(filepath=os.path.join(cur_dir, "data", "yara", "archives.yar"))
+
+    def _compile_rules(name):
+        with open(os.path.join(cur_dir, "data", "yara", name), encoding="utf-8") as fh:
+            return yara_x.compile(fh.read())
+
+    shellcode_rules = _compile_rules("shellcodes.yar")
+    archives_rules = _compile_rules("archives.yar")
     HAVE_YARA = True
 except ImportError:
     HAVE_YARA = False
+
+
+def _yara_matches(rules, data):
+    """Identifiers of rules matching `data`."""
+    return {rule.identifier for rule in rules.scan(data).matching_rules}
 
 
 try:
@@ -239,8 +249,7 @@ def detect_shellcode(f):
         return
     """
     if HAVE_YARA:
-        matches = shellcode_rules.match(data=f.contents)
-        if matches:
+        if _yara_matches(shellcode_rules, f.contents):
             return "Shellcode"
     """
     global shellcode_count32, shellcode_count64, shellcode_last_address
@@ -838,8 +847,7 @@ def vbe_jse(f):
 
 def udf(f):
     if HAVE_YARA:
-        matches = archives_rules.match(data=f.contents)
-        if "archive_udf" in [rule.rule for rule in matches]:
+        if "archive_udf" in _yara_matches(archives_rules, f.contents):
             return "udf"
 
 
