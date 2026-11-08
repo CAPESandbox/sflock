@@ -430,16 +430,46 @@ class File(object):
             self._scan_buffer = self._read_head(MAX_IDENT_SCAN_SIZE)
         return self._scan_buffer or b""
 
+    def _magic_lookup(self, mime=False):
+        res = magic.from_buffer(self.header, mime=mime)
+        if res in (None, "", "data", "application/octet-stream"):
+            for path in (self.filepath, self._temp_filepath):
+                if path and os.path.exists(path):
+                    try:
+                        file_res = magic.from_file(path, mime=mime)
+                        if file_res:
+                            return file_res
+                    except Exception:
+                        pass
+            if hasattr(os, "memfd_create"):
+                fd = -1
+                try:
+                    fd = os.memfd_create("sflock_magic", 0)
+                    os.write(fd, self.header)
+                    os.lseek(fd, 0, os.SEEK_SET)
+                    fd_res = magic.from_descriptor(fd, mime=mime)
+                    if fd_res:
+                        return fd_res
+                except Exception:
+                    pass
+                finally:
+                    if fd >= 0:
+                        try:
+                            os.close(fd)
+                        except OSError:
+                            pass
+        return res
+
     @property
     def magic(self):
         if not self._magic and self.filesize:
-            self._magic = magic.from_buffer(self.header)
+            self._magic = self._magic_lookup(mime=False)
         return self._magic or ""
 
     @property
     def mime(self):
         if not self._mime and self.filesize:
-            self._mime = magic.from_buffer(self.header, mime=True)
+            self._mime = self._magic_lookup(mime=True)
         return self._mime or ""
 
     @property

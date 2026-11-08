@@ -8,7 +8,7 @@ from sflock import magic
 
 def test_magic():
     assert magic.from_file("tests/files/maldoc.xls").startswith(("Composite Document File V2", "CDF V2 Document"))
-    assert magic.from_file("tests/files/test.hta_").startswith("HTML document")
+    assert magic.from_file("tests/files/test.hta_").startswith(("HTML document", "Microsoft HTML Application (HTA)"))
     assert magic.from_file("tests/files/cab2.cab").startswith("Microsoft Cabinet")
 
 
