@@ -3,7 +3,6 @@
 # See the file 'docs/LICENSE.txt' for copying permission.
 
 import os
-import tempfile
 
 from sflock.abstracts import Unpacker
 from sflock.misc import data_file
@@ -19,13 +18,13 @@ class DaaFile(Unpacker):
         self.exe = data_file(b"poweriso.elf")
 
     def unpack(self, password=None, duplicates=None):
-        dirpath = tempfile.mkdtemp()
+        dirpath = self.mkdtemp()
 
         if self.f.filepath:
             filepath = os.path.abspath(self.f.filepath)
             temporary = False
         else:
-            filepath = self.f.temp_path(".daa")
+            filepath = self.temp_path(".daa")
             temporary = True
 
         ret = self.zipjail(filepath, dirpath, "extract", filepath, "/", "-od", dirpath)

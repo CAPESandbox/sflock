@@ -5,19 +5,23 @@
 
 import hashlib
 import io
+import logging
 import magic
 import ntpath
 import olefile
-import os.path
+import os
 import re
 import shutil
 import subprocess
 import tempfile
+import weakref
 
 from sflock.config import MAX_IDENT_SCAN_SIZE, iter_passwords
 from sflock.exception import UnpackException
 from sflock.misc import data_file, make_list
 from sflock.pick import package, platform
+
+log = logging.getLogger(__name__)
 
 
 class Unpacker(object):
@@ -48,8 +52,9 @@ class Unpacker(object):
     def zipjail(self, filepath, dirpath, *args):
         zipjail = data_file(b"zipjail.elf")
         # Consider for future make c=X as argument. If we have many children it will give one clone per child
+        # Popen accepts a mix of str/bytes argv entries on POSIX (os.fsencode per item).
         p = subprocess.Popen(
-            (zipjail, filepath, dirpath, "-c=30", "--", self.exe) + args,
+            [zipjail, filepath, dirpath, "-c=30", "--", self.exe, *args],
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -57,7 +62,7 @@ class Unpacker(object):
 
         # https://github.com/CAPESandbox/sflock/pull/60
         # return_code = p.wait()
-        out, err = p.communicate()
+        _, err = p.communicate()
         return_code = p.returncode
 
         if b"Excessive writing caused incomplete unpacking!" in err:
@@ -111,6 +116,26 @@ class Unpacker(object):
     def unpack(self, password=None, duplicates=None):
         raise NotImplementedError
 
+    def mkdtemp(self):
+        """Creates a temporary directory owned by `self.f`.
+
+        Registered immediately, so it is removed on `self.f.close()`/GC even
+        if `unpack()` bails out early, and right away by `process()` when the
+        unpacker yields no children.
+        """
+        dirpath = tempfile.mkdtemp()
+        if self.f is not None:
+            self.f.temp_dirs.append(dirpath)
+        return dirpath
+
+    def temp_path(self, suffix=""):
+        """On-disk copy of `self.f` inside an owned temporary directory (see
+        `mkdtemp`). Callers may still unlink it early."""
+        dirpath = self.mkdtemp()
+        if isinstance(suffix, bytes):
+            dirpath = os.fsencode(dirpath)
+        return self.f.temp_path(suffix, dir=dirpath)
+
     def process(self, entries, duplicates, password=None):
         """Recursively unpacks embedded archives if found."""
         if duplicates is None:
@@ -131,6 +156,9 @@ class Unpacker(object):
                     f.metadata = plugin.get_metadata()
                     if f.children:
                         break
+                    # Nothing references files in a failed unpacker's
+                    # directories; reclaim them now rather than at close/GC.
+                    _cleanup_temp_dirs(f.temp_dirs)
 
             if f.sha256 not in duplicates:
                 duplicates.append(f.sha256)
@@ -148,8 +176,10 @@ class Unpacker(object):
         return Unpacker(None).process([f], duplicates, password)
 
     def process_directory(self, dirpath, duplicates, password=None):
-        """Enumerates a directory, removes the directory, and returns data
-        after calling the process function."""
+        """Enumerates a directory and returns data after calling the process
+        function. Extracted files are read lazily from `dirpath`, which is
+        owned by `self.f` and removed on `self.f.close()` (or on garbage
+        collection / interpreter exit)."""
         entries = []
         if duplicates is None:
             duplicates = []
@@ -161,15 +191,10 @@ class Unpacker(object):
         for dirpath2, _, filepaths in os.walk(dirpath):
             for filepath in filepaths:
                 filepath = os.path.join(dirpath2, filepath)
-                if os.name == "nt":
-                    # On Windows, we need O_TEMPORARY flag to open
-                    # file with FILE_SHARE_DELETE share mode
-                    stream = open(filepath, "rb", opener=lambda path, flags: os.open(path, flags | os.O_TEMPORARY))
-                else:
-                    stream = open(filepath, "rb")
-                entries.append(File(relapath=filepath[len(dirpath) + 1 :], password=password, stream=stream))
+                entries.append(File(relapath=filepath[len(dirpath) + 1 :], password=password, temp_filepath=filepath))
 
-        shutil.rmtree(dirpath)
+        if dirpath not in self.f.temp_dirs:
+            self.f.temp_dirs.append(dirpath)
         return self.process(entries, duplicates, password)
 
     def bruteforce(self, passwords, *args, **kwargs):
@@ -207,6 +232,19 @@ class Decoder(object):
         pass
 
 
+def _cleanup_temp_dirs(temp_dirs):
+    """Removes extraction directories. Module-level (not a bound method) so
+    that weakref.finalize does not keep the owning File alive."""
+    while temp_dirs:
+        d = temp_dirs.pop()
+        try:
+            shutil.rmtree(d)
+        except FileNotFoundError:
+            pass
+        except OSError as e:
+            log.warning("Failed to remove temporary directory %r: %s", d, e)
+
+
 class File(object):
     """Abstract class for all file operations.
 
@@ -228,6 +266,7 @@ class File(object):
         selected=None,
         stream=None,
         platform=None,
+        temp_filepath=None,
     ):
         if isinstance(relapath, str):
             try:
@@ -248,6 +287,10 @@ class File(object):
         self.description = description
         self.password = password
         self.children = []
+        # Extraction directories owned by this file (populated by
+        # Unpacker.process_directory). Removed on close(), GC, or exit.
+        self.temp_dirs = []
+        self._finalizer = weakref.finalize(self, _cleanup_temp_dirs, self.temp_dirs)
         self.duplicate = False
         self.unpacker = None
         self.parent = None
@@ -259,6 +302,10 @@ class File(object):
 
         self._contents = contents
         self._package = None
+        # Backing file inside a parent's extraction directory. Unlike
+        # `filepath` it is not exposed to unpackers/consumers as a stable
+        # on-disk location, since it disappears when the parent is closed.
+        self._temp_filepath = temp_filepath
         self._platform = platform
         self._selected = selected
         self._sha256 = None
@@ -279,46 +326,100 @@ class File(object):
     def from_path(self, filepath, relapath=None, filename=None, password=None):
         return File(filepath=filepath, stream=open(filepath, "rb"), relapath=relapath, filename=filename, password=password)
 
-    def temp_path(self, suffix=""):
+    def _open_backing(self):
+        """Opens the on-disk backing file, or returns None if there is none.
+
+        A missing user-supplied `filepath` raises as usual. A missing
+        extraction temp file (its owning parent was closed) yields None, which
+        matches the pre-lazy behaviour of a closed child stream.
+        """
+        if self.filepath:
+            return open(self.filepath, "rb")
+        if self._temp_filepath:
+            try:
+                return open(self._temp_filepath, "rb")
+            except FileNotFoundError:
+                return None
+        return None
+
+    def open(self):
+        """Returns a new readable binary file object owned by the caller (use
+        as a context manager). Streams from disk when the data is only
+        file-backed; otherwise wraps the in-memory contents."""
+        if self._contents is None and self._stream is None:
+            fh = self._open_backing()
+            if fh is not None:
+                return fh
+        return io.BytesIO(self.contents or b"")
+
+    def temp_path(self, suffix="", dir=None):
         # TODO Depending on use-case we may not need a full copy. Perhaps
         # abstract away the "if self.f.filepath ... else ..." logic?
-        fd, filepath = tempfile.mkstemp(suffix=suffix)
-        shutil.copyfileobj(self.stream, os.fdopen(fd, "wb"))
+        fd, filepath = tempfile.mkstemp(suffix=suffix, dir=dir)
+        with os.fdopen(fd, "wb") as dst, self.open() as src:
+            shutil.copyfileobj(src, dst)
         return filepath
 
     @property
     def contents(self):
         if self._contents is None:
-            if self.filepath:
-                self._contents = open(self.filepath, "rb").read()
-            elif self._stream is not None:
+            if self._stream is not None:
                 self._stream.seek(0)
                 self._contents = self._stream.read()
+            else:
+                fh = self._open_backing()
+                if fh is not None:
+                    with fh:
+                        self._contents = fh.read()
         return self._contents
 
     @property
     def stream(self):
-        if not self._stream:
-            return io.BytesIO(self.contents)
+        """Seekable stream positioned at 0. Returns the caller-supplied stream
+        if any; otherwise an in-memory copy. Never opens a long-lived fd."""
+        if self._stream is not None:
+            self._stream.seek(0)
+            return self._stream
+        return io.BytesIO(self.contents or b"")
 
-        self._stream.seek(0)
-        return self._stream
+    def _read_head(self, size):
+        if self._contents is not None:
+            return self._contents[:size]
+        if self._stream is not None:
+            self._stream.seek(0)
+            return self._stream.read(size)
+        fh = self._open_backing()
+        if fh is None:
+            return b""
+        with fh:
+            return fh.read(size)
 
     @property
     def sha256(self):
         if not self._sha256:
-            h, s, buf = hashlib.sha256(), self.stream, True
-            while buf:
-                buf = s.read(0x10000)
-                h.update(buf)
-
+            h = hashlib.sha256()
+            if self._contents is not None:
+                h.update(self._contents)
+            else:
+                fh = self._stream
+                if fh is not None:
+                    fh.seek(0)
+                else:
+                    fh = self._open_backing()
+                if fh is not None:
+                    try:
+                        for buf in iter(lambda: fh.read(0x10000), b""):
+                            h.update(buf)
+                    finally:
+                        if fh is not self._stream:
+                            fh.close()
             self._sha256 = h.hexdigest()
         return self._sha256
 
     @property
     def header(self):
         if not self._header and self.filesize:
-            self._header = self.stream.read(1024 * 1024)
+            self._header = self._read_head(1024 * 1024)
         return self._header or b""
 
     @property
@@ -326,14 +427,7 @@ class File(object):
         """Head of the file, for content-sniffing identifiers. Bounded so
         that identification stays cheap on very large files."""
         if self._scan_buffer is None:
-            if self._contents is not None:
-                self._scan_buffer = self._contents[:MAX_IDENT_SCAN_SIZE]
-            elif self._stream is not None:
-                self._stream.seek(0)
-                self._scan_buffer = self._stream.read(MAX_IDENT_SCAN_SIZE)
-            elif self.filepath:
-                with open(self.filepath, "rb") as fh:
-                    self._scan_buffer = fh.read(MAX_IDENT_SCAN_SIZE)
+            self._scan_buffer = self._read_head(MAX_IDENT_SCAN_SIZE)
         return self._scan_buffer or b""
 
     @property
@@ -384,9 +478,19 @@ class File(object):
 
     @property
     def filesize(self):
-        s = self.stream
-        s.seek(0, os.SEEK_END)
-        return s.tell()
+        if self._contents is not None:
+            return len(self._contents)
+        if self._stream is not None:
+            self._stream.seek(0, os.SEEK_END)
+            return self._stream.tell()
+        if self.filepath:
+            return os.path.getsize(self.filepath)
+        if self._temp_filepath:
+            try:
+                return os.path.getsize(self._temp_filepath)
+            except FileNotFoundError:
+                return 0
+        return 0
 
     @property
     def package(self):
@@ -445,11 +549,22 @@ class File(object):
         return self._ole
 
     def close(self):
+        """Releases the stream and removes extraction directories for this
+        file and its whole subtree.
+
+        Terminal: extracted descendants are backed by files inside those
+        directories, so read any `contents` you need *before* calling close().
+        Afterwards, un-cached descendants report `contents is None` /
+        `filesize == 0`. Streams are closed before directories are removed so
+        that rmtree also succeeds on Windows.
+        """
         if self._stream:
             self._stream.close()
             self._stream = None
         for child in self.children:
             child.close()
+        # Runs _cleanup_temp_dirs once and unregisters the GC/atexit hook.
+        self._finalizer()
 
     def raise_no_ole(self, message):
         if self.ole is None:
@@ -551,7 +666,8 @@ class File(object):
                 if not os.path.exists(os.path.dirname(filepath)):
                     os.mkdir(os.path.dirname(filepath))
 
-            shutil.copyfileobj(child.stream, open(filepath, "wb"), 1024 * 1024)
+            with child.open() as src, open(filepath, "wb") as dst:
+                shutil.copyfileobj(src, dst, 1024 * 1024)
             child.extract(dirpath, preserve=preserve)
 
     def read(self, relapath, stream=False):

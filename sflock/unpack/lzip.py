@@ -1,6 +1,5 @@
 import os
 import shutil
-import tempfile
 
 from sflock.abstracts import Unpacker
 
@@ -12,13 +11,13 @@ class LzipFile(Unpacker):
     magic = "lzip compressed data, version: 1"
 
     def unpack(self, password=None, duplicates=None):
-        dirpath = tempfile.mkdtemp()
+        dirpath = self.mkdtemp()
 
         if self.f.filepath:
             filepath = self.f.filepath
             temporary = False
         else:
-            filepath = self.f.temp_path()
+            filepath = self.temp_path()
             temporary = True
 
         file_name = os.path.basename(filepath)

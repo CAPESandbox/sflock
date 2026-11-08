@@ -5,12 +5,23 @@
 
 import bz2
 import gzip
+import io
 import os
 import tarfile
-import tempfile
+import zlib
 
 from sflock.abstracts import Unpacker, File
 from sflock.config import MAX_TOTAL_SIZE
+
+
+def _probe_decompress(opener, head):
+    """True if `head` (a prefix of the file) starts a valid stream for the
+    given compressed-file class. A truncated prefix may raise EOFError."""
+    try:
+        with opener(io.BytesIO(head)) as d:
+            return bool(d.read(0x1000))
+    except (OSError, EOFError, zlib.error):
+        return False
 
 
 class TarFile(Unpacker):
@@ -31,23 +42,24 @@ class TarFile(Unpacker):
             return []
 
         entries, total_size = [], 0
-        for entry in archive:
-            # Ignore anything that's not a file for now.
-            if not entry.isfile() or entry.size < 0:
-                continue
+        with archive:
+            for entry in archive:
+                # Ignore anything that's not a file for now.
+                if not entry.isfile() or entry.size < 0:
+                    continue
 
-            # TODO Improve this. Also take precedence for native decompression
-            # utilities over the Python implementation in the future.
-            total_size += entry.size
-            if total_size >= MAX_TOTAL_SIZE:
-                self.f.error = "files_too_large"
-                return []
+                # TODO Improve this. Also take precedence for native decompression
+                # utilities over the Python implementation in the future.
+                total_size += entry.size
+                if total_size >= MAX_TOTAL_SIZE:
+                    self.f.error = "files_too_large"
+                    return []
 
-            try:
-                relapath = entry.path.encode("utf-8", "surrogateescape")
-            except UnicodeEncodeError:
-                relapath = entry.path.encode("utf-8", "replace")
-            entries.append(File(relapath=relapath, contents=archive.extractfile(entry).read()))
+                try:
+                    relapath = entry.path.encode("utf-8", "surrogateescape")
+                except UnicodeEncodeError:
+                    relapath = entry.path.encode("utf-8", "replace")
+                entries.append(File(relapath=relapath, contents=archive.extractfile(entry).read()))
 
         return self.process(entries, duplicates)
 
@@ -61,7 +73,6 @@ class TargzFile(TarFile, Unpacker):
         return True
 
     def handles(self):
-        ret = False
         if self.f.filename and self.f.filename.lower().endswith(b".tar.gz"):
             return True
 
@@ -69,30 +80,15 @@ class TargzFile(TarFile, Unpacker):
             return False
 
         if not self.f.filesize:
-            return ret
+            return False
 
-        fd, filepath = tempfile.mkstemp()
-        os.write(fd, self.f.stream.read(0x1000))
-        os.close(fd)
-
-        d = gzip.open(filepath)
-
-        try:
-            ret = False
-            if d.read(0x1000):
-                ret = True
-        except IOError:
-            pass
-
-        d.close()
-        os.unlink(filepath)
-        return ret
+        return _probe_decompress(gzip.open, self.f.header[:0x1000])
 
     def unpack(self, password=None, duplicates=None):
-        dirpath = tempfile.mkdtemp()
+        dirpath = self.mkdtemp()
 
         if not self.f.filepath:
-            filepath = self.f.temp_path(".gz")
+            filepath = self.temp_path(".gz")
             temporary = True
         else:
             filepath = self.f.filepath
@@ -139,28 +135,13 @@ class Tarbz2File(TarFile, Unpacker):
         if not self.f.filesize:
             return False
 
-        fd, filepath = tempfile.mkstemp()
-        os.write(fd, self.f.stream.read(0x1000))
-        os.close(fd)
-
-        d = bz2.BZ2File(filepath, "r")
-
-        try:
-            ret = False
-            if d.read(0x1000):
-                ret = True
-        except IOError:
-            pass
-
-        d.close()
-        os.unlink(filepath)
-        return ret
+        return _probe_decompress(bz2.open, self.f.header[:0x1000])
 
     def unpack(self, password=None, duplicates=None):
-        dirpath = tempfile.mkdtemp()
+        dirpath = self.mkdtemp()
 
         if not self.f.filepath:
-            filepath = self.f.temp_path(".bz2")
+            filepath = self.temp_path(".bz2")
             temporary = True
         else:
             filepath = self.f.filepath

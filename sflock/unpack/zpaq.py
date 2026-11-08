@@ -4,7 +4,6 @@
 # See the file 'docs/LICENSE.txt' for copying permission.
 
 import os
-import tempfile
 import subprocess
 from sflock.abstracts import Unpacker
 
@@ -16,7 +15,7 @@ class ZpaqFile(Unpacker):
     magic = "ZPAQ file"
 
     def unpack(self, password=None, duplicates=None):
-        dirpath = tempfile.mkdtemp()
+        dirpath = self.mkdtemp()
         original_path = self.f.filepath
         if self.f.filepath:
             if not self.f.filepath.endswith(b".zpaq"):
@@ -25,7 +24,7 @@ class ZpaqFile(Unpacker):
             filepath = os.path.abspath(self.f.filepath)
             temporary = False
         else:
-            filepath = self.f.temp_path(b".zpaq")
+            filepath = self.temp_path(b".zpaq")
             temporary = True
 
         # ToDo fix tracy/zipjail Blocked mmap(2) syscall with X flag set!
@@ -42,15 +41,15 @@ class ZpaqFile(Unpacker):
         _, _ = p.communicate()
         ret = not return_code
 
-        if not ret:
-            return []
-
         if temporary:
             os.unlink(filepath)
 
         if original_path != self.f.filepath:
             os.rename(self.f.filepath, original_path)
             self.f.filepath = original_path
+
+        if not ret:
+            return []
 
         return self.process_directory(dirpath, duplicates)
 

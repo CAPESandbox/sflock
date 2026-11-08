@@ -24,7 +24,7 @@ class PdfFile(Unpacker):
             filepath = self.f.filepath
             temporary = False
         else:
-            filepath = self.f.temp_path()
+            filepath = self.temp_path()
             temporary = True
 
         p = peepdf.PDFCore.PDFParser()
