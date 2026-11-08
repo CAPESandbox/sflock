@@ -5,8 +5,13 @@
 
 import os.path
 
+import pytest
+
 from sflock.main import unpack
-from sflock.ident import identify
+from sflock.ident import HAVE_UNICORN, identify
+
+
+pytestmark = pytest.mark.skipif(not HAVE_UNICORN, reason="unicorn is not installed")
 
 
 def f(filename):

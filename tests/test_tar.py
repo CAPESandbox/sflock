@@ -3,7 +3,11 @@
 # This file is part of SFlock - http://www.sflock.org/.
 # See the file 'docs/LICENSE.txt' for copying permission.
 
+import bz2
+import io
+import os
 import os.path
+import tarfile
 
 from sflock.abstracts import File
 from sflock.main import unpack
@@ -194,3 +198,22 @@ class TestTarFile(object):
         assert len(files) == 1
         assert not files[0].children
         assert files[0].mode == "failed"
+
+    def test_tarbz2_extensionless_over_4kb(self):
+        payload = os.urandom(64 * 1024)
+        tar_buf = io.BytesIO()
+        with tarfile.open(fileobj=tar_buf, mode="w:") as tar:
+            info = tarfile.TarInfo(name="payload.bin")
+            info.size = len(payload)
+            tar.addfile(info, io.BytesIO(payload))
+        bz2_bytes = bz2.compress(tar_buf.getvalue(), compresslevel=9)
+        assert len(bz2_bytes) > 0x1000
+
+        assert Tarbz2File(File(contents=bz2_bytes)).handles() is True
+        t = unpack(contents=bz2_bytes, filename=b"foo")
+        try:
+            assert t.unpacker == "tarbz2file"
+            assert t.children[0].children[0].relapath == b"payload.bin"
+            assert t.children[0].children[0].contents == payload
+        finally:
+            t.close()

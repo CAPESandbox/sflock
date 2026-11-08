@@ -49,4 +49,4 @@ local_scheme = "no-local-version"
 packages = ["sflock"]
 
 [tool.hatch.build.targets.sdist]
-include = ["/sflock", "/README.md"]
+include = ["/sflock", "/README.md", "/docs/LICENSE"]

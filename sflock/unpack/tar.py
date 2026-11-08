@@ -19,7 +19,7 @@ def _probe_decompress(opener, head):
     given compressed-file class. A truncated prefix may raise EOFError."""
     try:
         with opener(io.BytesIO(head)) as d:
-            return bool(d.read(0x1000))
+            return bool(d.read(1))
     except (OSError, EOFError, zlib.error):
         return False
 
@@ -135,7 +135,7 @@ class Tarbz2File(TarFile, Unpacker):
         if not self.f.filesize:
             return False
 
-        return _probe_decompress(bz2.open, self.f.header[:0x1000])
+        return _probe_decompress(bz2.open, self.f.header)
 
     def unpack(self, password=None, duplicates=None):
         dirpath = self.mkdtemp()
