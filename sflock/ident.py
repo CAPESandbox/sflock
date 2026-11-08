@@ -3,6 +3,7 @@
 # See the file 'docs/LICENSE.txt' for copying permission.
 import os
 import re
+import zipfile
 from collections import OrderedDict
 
 import pefile
@@ -257,6 +258,9 @@ def detect_shellcode(f):
     shellcode_count64 = 0
     shellcode_last_address = 0
 
+    if not HAVE_UNICORN:
+        return False
+
     if not have_enough_memory_for_unicorn():
         print("not enough memory for unicorn")
         return False
@@ -405,7 +409,15 @@ def office_activemime(f):
 
 
 def msix(f):
-    if all([pattern in f.contents for pattern in (b"Registry.dat", b"AppxManifest.xml")]):
+    if not f.scan_buffer.startswith(b"PK"):
+        return
+    try:
+        with f.open() as fh:
+            names = zipfile.ZipFile(fh).namelist()
+    except Exception:
+        return
+    basenames = {name.rsplit("/", 1)[-1] for name in names}
+    if {"Registry.dat", "AppxManifest.xml"} <= basenames or "AppxBundleManifest.xml" in basenames:
         return "msix"
 
 
@@ -847,7 +859,7 @@ def vbe_jse(f):
 
 def udf(f):
     if HAVE_YARA:
-        if "archive_udf" in _yara_matches(archives_rules, f.contents):
+        if "archive_udf" in _yara_matches(archives_rules, f.header):
             return "udf"
 
 

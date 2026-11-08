@@ -13,6 +13,7 @@ import pytest
 
 from sflock import abstracts
 from sflock.abstracts import File
+from sflock.ident import identify
 from sflock.main import unpack
 from sflock.unpack.tar import TargzFile, Tarbz2File, _probe_decompress
 from sflock.unpack.zip7 import ZipFile
@@ -189,3 +190,66 @@ def test_direct_unpack_early_return_cleaned_on_close():
     assert all(os.path.exists(d) for d in _FailingUnpacker.created)
     f.close()
     assert not any(os.path.exists(d) for d in _FailingUnpacker.created)
+
+
+def test_from_path_open_and_msix_do_not_materialize_contents(tmp_path):
+    msix_path = tmp_path / "sample_msix"
+    msix_path.write_bytes(_msix_bytes(4096))
+
+    f = File.from_path(str(msix_path).encode())
+    try:
+        with f.open() as fh:
+            assert len(fh.read()) > 4096
+        assert f._contents is None
+
+        tp = f.temp_path()
+        try:
+            assert os.path.getsize(tp) == msix_path.stat().st_size
+        finally:
+            os.unlink(tp)
+        assert f._contents is None
+
+        assert ZipFile(f).handles() is False
+        assert f._contents is None
+    finally:
+        f.close()
+
+    u = unpack(str(msix_path).encode())
+    try:
+        assert u.package == "msix"
+        assert u.children == []
+        assert u._contents is None
+    finally:
+        u.close()
+
+
+def test_msixbundle_not_unpacked_and_outer_zip_with_msix_unpacked():
+    inner_msix = _msix_bytes(64)
+
+    bundle_buf = io.BytesIO()
+    with zipfile.ZipFile(bundle_buf, "w", zipfile.ZIP_DEFLATED) as z:
+        z.writestr("AppxMetadata/AppxBundleManifest.xml", b"<Bundle/>")
+        z.writestr("app_x64.msix", inner_msix)
+    bundle = bundle_buf.getvalue()
+
+    assert ZipFile(File(contents=bundle)).handles() is False
+
+    for kwargs in ({}, {"filename": b"app.msixbundle"}):
+        u = unpack(contents=bundle, **kwargs)
+        try:
+            assert u.package == "msix"
+            assert u.children == []
+        finally:
+            u.close()
+
+    outer_buf = io.BytesIO()
+    with zipfile.ZipFile(outer_buf, "w", zipfile.ZIP_STORED) as z:
+        z.writestr("app.msix", inner_msix)
+    u_outer = unpack(contents=outer_buf.getvalue())
+    try:
+        assert u_outer.package == "zip"
+        assert len(u_outer.children) == 1
+        assert u_outer.children[0].children == []
+        assert identify(u_outer.children[0]) == "msix"
+    finally:
+        u_outer.close()

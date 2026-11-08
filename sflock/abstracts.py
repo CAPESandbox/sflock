@@ -346,7 +346,7 @@ class File(object):
         """Returns a new readable binary file object owned by the caller (use
         as a context manager). Streams from disk when the data is only
         file-backed; otherwise wraps the in-memory contents."""
-        if self._contents is None and self._stream is None:
+        if self._contents is None:
             fh = self._open_backing()
             if fh is not None:
                 return fh
@@ -392,6 +392,19 @@ class File(object):
         if fh is None:
             return b""
         with fh:
+            return fh.read(size)
+
+    def _read_tail(self, offset, size):
+        if self._contents is not None:
+            return self._contents[offset : offset + size]
+        if self._stream is not None:
+            self._stream.seek(offset)
+            return self._stream.read(size)
+        fh = self._open_backing()
+        if fh is None:
+            return b""
+        with fh:
+            fh.seek(offset)
             return fh.read(size)
 
     @property
@@ -441,23 +454,41 @@ class File(object):
                             return file_res
                     except Exception:
                         pass
-            if hasattr(os, "memfd_create"):
-                fd = -1
-                try:
+            fd = -1
+            tmp = None
+            try:
+                if hasattr(os, "memfd_create"):
                     fd = os.memfd_create("sflock_magic", 0)
-                    os.write(fd, self.header)
-                    os.lseek(fd, 0, os.SEEK_SET)
-                    fd_res = magic.from_descriptor(fd, mime=mime)
-                    if fd_res:
-                        return fd_res
-                except Exception:
-                    pass
-                finally:
-                    if fd >= 0:
-                        try:
-                            os.close(fd)
-                        except OSError:
-                            pass
+                else:
+                    tmp = tempfile.TemporaryFile()
+                    fd = tmp.fileno()
+                head = self.header
+                os.write(fd, head)
+                total = self.filesize
+                if total > len(head):
+                    os.ftruncate(fd, total)
+                    tail_off = max(len(head), total - 1024 * 1024)
+                    tail = self._read_tail(tail_off, total - tail_off)
+                    if tail:
+                        os.lseek(fd, tail_off, os.SEEK_SET)
+                        os.write(fd, tail)
+                os.lseek(fd, 0, os.SEEK_SET)
+                fd_res = magic.from_descriptor(fd, mime=mime)
+                if fd_res:
+                    return fd_res
+            except Exception:
+                pass
+            finally:
+                if tmp is not None:
+                    try:
+                        tmp.close()
+                    except OSError:
+                        pass
+                elif fd >= 0:
+                    try:
+                        os.close(fd)
+                    except OSError:
+                        pass
         return res
 
     @property

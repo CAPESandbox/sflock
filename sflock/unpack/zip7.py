@@ -30,7 +30,8 @@ class ZipFile(Unpacker):
         except Exception:
             # Malformed/truncated input: let the regular zip path decide.
             return False
-        return self._MSIX_MARKERS <= {name.rsplit("/", 1)[-1] for name in names}
+        basenames = {name.rsplit("/", 1)[-1] for name in names}
+        return self._MSIX_MARKERS <= basenames or "AppxBundleManifest.xml" in basenames
 
     def handles(self):
         if self.f.filename and self.f.filename.endswith(self.exts):

@@ -12,7 +12,7 @@ from sflock.abstracts import File
 # `sflock.ident` the attribute is the re-exported ident() function; fetch the module.
 ident = importlib.import_module("sflock.ident")
 
-pytestmark = pytest.mark.skipif(not ident.HAVE_YARA, reason="yara-x not installed (install with -E shellcode)")
+pytestmark = pytest.mark.skipif(not ident.HAVE_YARA, reason="yara-x not installed (install with --extra shellcode)")
 
 
 def _udf_image(ids=(b"BEA01", b"NSR02", b"TEA01")):
@@ -48,3 +48,14 @@ def test_udf_ids_outside_window_ignored():
 def test_shellcode_rules_match_fixture():
     data = open("tests/files/busybox-i686", "rb").read()
     assert "shellcode_get_eip" in ident._yara_matches(ident.shellcode_rules, data)
+
+
+def test_udf_from_path_does_not_materialize_contents(tmp_path):
+    p = tmp_path / "sample_udf"
+    p.write_bytes(_udf_image() + b"\x00" * (2 * 1024 * 1024))
+    f = File.from_path(str(p).encode())
+    try:
+        assert ident.udf(f) == "udf"
+        assert f._contents is None
+    finally:
+        f.close()

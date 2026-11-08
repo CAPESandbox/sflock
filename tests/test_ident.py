@@ -2,6 +2,7 @@
 # This file is part of SFlock - http://www.sflock.org/.
 # See the file 'docs/LICENSE.txt' for copying permission.
 
+import importlib
 import os
 import re
 import tempfile
@@ -174,3 +175,11 @@ def test_nodejs_scan_buffer_cap_stream(monkeypatch):
         assert nodejs(File.from_path(filepath.encode())) == "nodejs"
     finally:
         os.unlink(filepath)
+
+
+def test_detect_shellcode_without_unicorn(monkeypatch):
+    ident_mod = importlib.import_module("sflock.ident")
+    monkeypatch.setattr(ident_mod, "HAVE_UNICORN", False)
+    sample = File(contents=b"\x90" * 512)
+    assert ident_mod.detect_shellcode(sample) is False
+    assert identify(sample, check_shellcode=True) is False
